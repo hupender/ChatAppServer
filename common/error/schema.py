@@ -1,0 +1,12 @@
+from django.utils.translation import gettext_noop as _
+
+INVALID_USERNAME = _("Username is not valid.")
+INVALID_FIRST_NAME = _("First name is not valid.")
+INVALID_LAST_NAME = _("Last name is not valid.")
+INVALID_MOBILE_NUMBER = _("Mobile Number is invalid.")
+MOBILE_NUMBER_CONTAIN_ALPHANUMERIC = _("Mobile number contains alphanumerics.")
+INCORRECT_LENGTH_OF_MOBILE_NUMBER = _("Incorrect length of mobile number.")
+LANGUAGE_NOT_EXIST = _("Language does not exist in the system.")
+EMAIL_ALREADY_EXISTS = _("Email already exists.")
+MOBILE_NUMBER_EXISTS = _("Mobile number already exists.")
+INVALID_EMAIL_ID = _("Enter a valid email id")

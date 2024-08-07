@@ -1,0 +1,17 @@
+from django.utils.translation import gettext_noop as _
+
+INVALID_JSON_REQUEST_FORMAT = _("Invalid json request data.")
+SERVER_ERROR = _("Server not responding.")
+BAD_REQUEST = _("Invalid input data.")
+PARSE_ERROR = _("Input data can't be parsed.")
+AUTH_ERROR = _("Authentication failed.")
+PERMISSION_ERROR = _("You don't have permission for this resource.")
+TOO_MANY_REQUEST = _("Too many requests.")
+RESOURCE_ALREADY_EXIST = _("Resource already exists.")
+NOT_FOUND_ERROR = _( "Recource not found.")
+METHOD_ERROR = _("Method {method} not allowed.")
+USERNAME_PASSWORD_INCORRECT =_("Either username or password is incorrect.")
+ACCOUNT_NOT_EXISTS =_("Account does not exists for this username.")
+EMAIL_NOT_VERIFIED = _("Your email is not verified.")
+MOBILE_NOT_VERIFIED = _("Your mobile number is not verified.")
+EMAIL_MOBILE_NOT_VERIFIED = _("Email and mobile number not veirfied for this account.")
