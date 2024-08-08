@@ -10,6 +10,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.vscode
 
 # Ignore __pycache__ directories
 __pycache__/
