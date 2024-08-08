@@ -9,9 +9,11 @@ from common.error.schema import (
     EMAIL_ALREADY_EXISTS,
     MOBILE_NUMBER_EXISTS,
     INVALID_EMAIL_ID,
+    PASSWORD_MIN_LENGTH,
 )
 from account.helpers import clean_mobile_number
 from django.contrib.auth import get_user_model
+from common.helpers import validate_password
 
 user_model = get_user_model()
 
@@ -58,3 +60,14 @@ class LoginSchema(Schema):
     username = fields.String(required=True)
     password = fields.String(required=True)
     login_with_otp = fields.Boolean(required=False)
+
+class ChangePasswordSchema(Schema):
+    model = user_model
+
+    old_password = fields.String(required=True, load_only=True, validate=validate.Length(min=6, error=PASSWORD_MIN_LENGTH))
+    new_password = fields.String(required=True, load_only=True, validate=validate.Length(min=6, error=PASSWORD_MIN_LENGTH))
+
+    # enable later for password validation
+    # @validates("new_password")
+    # def validate_old_password(self,value):
+    #     return validate_password(value)

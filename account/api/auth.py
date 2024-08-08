@@ -91,7 +91,7 @@ def login(request):
     )
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET"])
 @api_exception_handler
 @validate_json_request
 @json_token_required
@@ -114,8 +114,8 @@ def refresh_token(request):
     response ={}
     response["user_id"] = request.user.id
     response["token"] = token
-    response["account_number"] = request.user.account_number
-    
+    response["account_number"] = request.account
+
     return JsonResponse(
         {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200
     )

@@ -58,6 +58,7 @@ def json_token_required(f):
             raise NotFound(errors=USER_NOT_FOUND)
         
         request.user = user
+        request.account = user.account_number
         
         session_key = f"user:{user.id}:session"
         session = data_cache.get(session_key)
