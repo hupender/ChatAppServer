@@ -118,8 +118,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 JWT_ALGORITHM = "RS256"
-JWT_PRIVATE_KEY= "/home/hupender/Projects/files/private.pem"
-JWT_PUBLIC_KEY= "/home/hupender/Projects/files/public.pem"
+JWT_PRIVATE_KEY = "/home/hupender/Projects/files/private.pem"
+JWT_PUBLIC_KEY = "/home/hupender/Projects/files/public.pem"
 JWT_TOKEN_EXPIRY = 86400
 
 REDIS_KEY_EXPIRY = 86400

@@ -6,4 +6,5 @@ urlpatterns = [
     path("create-user/", auth.create_user, name="create_user"),
     path("user-login/", auth.login, name="login"),
     path("update-user/", auth.update_user, name="update_user"),
+    path("refresh-token/",auth.refresh_token, name="refresh_token"),
 ]

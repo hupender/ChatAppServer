@@ -4,7 +4,7 @@ from marshmallow import ValidationError
 import jwt
 from django.conf import settings
 from django.utils import timezone
-from common.decorators import validate_json_request
+from common.decorators import validate_json_request, json_token_required
 from account.api.schema import UserSchema, LoginSchema
 from common.api_exception import api_exception_handler, BadRequestData
 from common.error.exceptions import BAD_REQUEST
@@ -67,7 +67,7 @@ def login(request):
         raise BadRequestData(errors= str(e))
     
     session_id = generate_random_string(32)
-    session_cache_key = f"user:{session_id}:session"
+    session_cache_key = f"user:{user.id}:session"
     data_cache.set(key=session_cache_key, value=session_id)
 
     with open(settings.JWT_PRIVATE_KEY) as file:
