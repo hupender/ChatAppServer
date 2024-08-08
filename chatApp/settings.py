@@ -117,12 +117,17 @@ AUTHENTICATION_BACKENDS = [
     "account.backends.AuthBackend"
 ]
 
+JWT_ALGORITHM = "RS256"
+JWT_PRIVATE_KEY= "/home/hupender/Projects/files/private.pem"
+JWT_PUBLIC_KEY= "/home/hupender/Projects/files/public.pem"
+JWT_TOKEN_EXPIRY = 86400
+
 REDIS_KEY_EXPIRY = 86400
 REDIS_SENTINAL_SERVER = {
     "HOST": "localhost",
     "PORT": "26379",
-    "DATA_DB": "1",
-    "OTP_DB": "2",
+    "DATA_DB": "11",
+    "OTP_DB": "12",
     "MASTER_NAME": "mymaster",
     "PASSWORD": ""
 }

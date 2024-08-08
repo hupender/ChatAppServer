@@ -1,15 +1,19 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from marshmallow import ValidationError
+import jwt
+from django.conf import settings
+from django.utils import timezone
 from common.decorators import validate_json_request
 from account.api.schema import UserSchema, LoginSchema
 from common.api_exception import api_exception_handler, BadRequestData
 from common.error.exceptions import BAD_REQUEST
-from common.helpers import make_response
+from common.helpers import make_response, generate_random_string
 from common.success.messages import (
     ACCOUNT_CREATED_SUCCESSFULLY,
     LOGIN_SUCCESSFULL,
 )
+from common.redis_proxy import data_cache
 from django.contrib.auth import get_user_model, authenticate
 
 
@@ -62,9 +66,28 @@ def login(request):
     except ValueError as e:
         raise BadRequestData(errors= str(e))
     
+    session_id = generate_random_string(32)
+    session_cache_key = f"user:{session_id}:session"
+    data_cache.set(key=session_cache_key, value=session_id)
 
+    with open(settings.JWT_PRIVATE_KEY) as file:
+        private_key = file.read()
+
+    payload = {
+        "user_id": user.id,
+        "exp": (timezone.now() + timezone.timedelta(seconds=settings.JWT_TOKEN_EXPIRY)),
+        "session_id": session_id
+    }
+
+    token = jwt.encode(payload, private_key, settings.JWT_ALGORITHM)
+    response = {}
+    response["user_id"] = user.id
+    response["token"] = token
+    response["account_number"] = user.account_number
     
-    return JsonResponse({"msg":"login successfull"})
+    return JsonResponse(
+        {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200
+    )
 
 
 @require_http_methods(["PUT"])
