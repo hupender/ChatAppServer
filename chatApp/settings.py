@@ -117,6 +117,15 @@ AUTHENTICATION_BACKENDS = [
     "account.backends.AuthBackend"
 ]
 
+REDIS_KEY_EXPIRY = 86400
+REDIS_SENTINAL_SERVER = {
+    "HOST": "localhost",
+    "PORT": "26379",
+    "DATA_DB": "1",
+    "OTP_DB": "2",
+    "MASTER_NAME": "mymaster",
+    "PASSWORD": ""
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
