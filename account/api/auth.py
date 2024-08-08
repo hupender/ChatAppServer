@@ -12,6 +12,7 @@ from common.helpers import make_response, generate_random_string
 from common.success.messages import (
     ACCOUNT_CREATED_SUCCESSFULLY,
     LOGIN_SUCCESSFULL,
+    REFRESH_TOKEN_SUCCESSFULL,
 )
 from common.redis_proxy import data_cache
 from django.contrib.auth import get_user_model, authenticate
@@ -84,6 +85,36 @@ def login(request):
     response["user_id"] = user.id
     response["token"] = token
     response["account_number"] = user.account_number
+    
+    return JsonResponse(
+        {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200
+    )
+
+
+@require_http_methods(["POST"])
+@api_exception_handler
+@validate_json_request
+@json_token_required
+def refresh_token(request):
+    message = REFRESH_TOKEN_SUCCESSFULL
+    session_id = generate_random_string(32)
+    session_cache_key = f"user:{request.user.id}:session"
+    data_cache.set(session_cache_key, session_id)
+
+    with open(settings.JWT_PRIVATE_KEY) as file:
+        private_key = file.read()
+
+    payload = {
+        "user_id": request.user.id,
+        "session_id": session_id,
+        "exp": (timezone.now() + timezone.timedelta(seconds=settings.JWT_TOKEN_EXPIRY))
+    }
+
+    token = jwt.encode(payload, private_key, settings.JWT_ALGORITHM)
+    response ={}
+    response["user_id"] = request.user.id
+    response["token"] = token
+    response["account_number"] = request.user.account_number
     
     return JsonResponse(
         {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200

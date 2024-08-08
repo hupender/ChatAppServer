@@ -57,6 +57,8 @@ def json_token_required(f):
         if not user:
             raise NotFound(errors=USER_NOT_FOUND)
         
+        request.user = user
+        
         session_key = f"user:{user.id}:session"
         session = data_cache.get(session_key)
         if not session or session != payload["session_id"]:
