@@ -4,6 +4,8 @@ from .schema import ChangePasswordSchema
 from common.success.messages import PASSWORD_CHANGED_SUCCESS
 from django.http import JsonResponse
 from common.api_exception import BadRequestData
+from common.error.exceptions import INVALID_PASSWORD
+from common.helpers import make_response
 
 
 user_model = get_user_model()
@@ -20,4 +22,13 @@ class ChangePassword(BaseView):
             data = self.schema.loads(request.body)
         except Exception as e:
             raise BadRequestData(errors=str(e))
-        return JsonResponse({"hi":"hi"})
+        
+        user = self.schema.user
+
+        is_valid_pass = user.check_password(data["old_password"])
+        if is_valid_pass:
+            user.set_password(data["new_password"])
+            user.save()
+            return JsonResponse(make_response(request, "POST", response_text=self.message))
+        else:
+            raise BadRequestData(errors=INVALID_PASSWORD)
