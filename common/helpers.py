@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 import random
 import re
-def make_response(request, response_type, response_text, id=None, response_data=None):
+def make_response(request, response_type, response_text, response_data=None):
     """
     build response in proper format so maintain uniformity in whole code
     """
@@ -30,3 +30,6 @@ def generate_random_string(length):
 def validate_password(value):
     regex = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$"
     return bool(re.fullmatch(regex,value))
+
+def create_random_number(length=6):
+    return random.randint(10**(length-1), 10**length-1)

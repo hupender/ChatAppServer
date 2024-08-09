@@ -5,20 +5,23 @@ import jwt
 from django.conf import settings
 from django.utils import timezone
 from common.decorators import validate_json_request, json_token_required
-from account.api.schema import UserSchema, LoginSchema
+from account.api.schema import UserSchema, LoginSchema, OtpSchema
 from common.api_exception import api_exception_handler, BadRequestData
-from common.error.exceptions import BAD_REQUEST
-from common.helpers import make_response, generate_random_string
+from common.error.exceptions import USER_NOT_FOUND, EMAIL_MOBILE_NOT_VERIFIED, EMAIL_MOBILE_NOT_EXIST
+from common.helpers import make_response, generate_random_string, create_random_number
+from account.helpers import get_user
 from common.success.messages import (
     ACCOUNT_CREATED_SUCCESSFULLY,
     LOGIN_SUCCESSFULL,
     REFRESH_TOKEN_SUCCESSFULL,
+    OTP_SENT,
 )
-from common.redis_proxy import data_cache
+from common.redis_proxy import data_cache, get_redis_instance
 from django.contrib.auth import get_user_model, authenticate
 
 
 user_model = get_user_model()
+otp_cache = get_redis_instance("OTP_DB")
 
 @require_http_methods(["POST"])
 @api_exception_handler
@@ -27,7 +30,7 @@ def create_user(request):
     """
     This api can be used for create a new user.
     """
-    model = user_model
+
     message = ACCOUNT_CREATED_SUCCESSFULLY
     schema = UserSchema()
     try:
@@ -35,7 +38,7 @@ def create_user(request):
     except ValidationError as e:
         raise BadRequestData(errors=str(e))
     
-    user = model.objects.create_user(password=data.pop("password"), **data)
+    user = user_model.objects.create_user(password=data.pop("password"), **data)
 
     response={}
     response["username"] = user.username
@@ -53,7 +56,7 @@ def login(request):
     """
     This api can be used for log-in 
     """
-    model = user_model
+    
     message = LOGIN_SUCCESSFULL
     schema = LoginSchema()
 
@@ -121,8 +124,37 @@ def refresh_token(request):
     )
 
 
-@require_http_methods(["PUT"])
+@require_http_methods(["POST"])
 @api_exception_handler
 @validate_json_request
-def update_user(request):
-    pass
+def send_otp(request):
+    schema = OtpSchema()
+    message = OTP_SENT
+
+    try:
+        data = schema.loads(request.body)
+    except Exception as e:
+        raise BadRequestData(errors=str(e))
+    
+    user = get_user(data["username"])
+
+    if not user:
+        raise BadRequestData(errors=USER_NOT_FOUND)
+    
+    if not (user.email or user.mobile_number):
+        raise EMAIL_MOBILE_NOT_EXIST
+    if not (user.email_verified or user.mobile_verified):
+        raise EMAIL_MOBILE_NOT_VERIFIED
+    
+
+    otp = create_random_number()
+
+    session_key = f"user:{user.id}:session"
+    otp_cache.set(session_key, otp)
+    response = {}
+    response["otp"]=otp
+
+    return JsonResponse(
+        {"response": make_response(request, "POST", message, response), "meta": {}}, status=200
+    )
+    

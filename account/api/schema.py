@@ -71,3 +71,10 @@ class ChangePasswordSchema(Schema):
     # @validates("new_password")
     # def validate_old_password(self,value):
     #     return validate_password(value)
+
+
+class OtpSchema(Schema):
+    model = user_model
+
+    username = fields.String(required=True)
+
