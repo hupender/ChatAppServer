@@ -141,7 +141,8 @@ class RedisProxy:
             raise Exception(str(err))
 
     
+def get_redis_instance(db="DATA_DB"):
+    return RedisProxy(db)
 
-
-data_cache = RedisProxy("DATA_DB")
+data_cache = get_redis_instance()
 
