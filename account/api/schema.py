@@ -7,6 +7,7 @@ from common.error.schema import (
     INVALID_LAST_NAME, 
     INVALID_MOBILE_NUMBER, 
     EMAIL_ALREADY_EXISTS,
+    INVALID_TOKEN,
     MOBILE_NUMBER_EXISTS,
     INVALID_EMAIL_ID,
     PASSWORD_MIN_LENGTH,
@@ -79,9 +80,13 @@ class OtpSchema(Schema):
     username = fields.String(required=True)
 
 
-class ValidateOtpSchema(Schema):
-    model = user_model
+class ValidateOtpSchema(OtpSchema):
 
-    username = fields.String(required=True)
     otp = fields.String(required=True, validate=validate.Length(min=6, error=INVALID_OTP))
+
+
+class PasswordChangeOtpSchema(OtpSchema):
+
+    password = fields.String(required=True, validate=validate.Length(min=6, error=PASSWORD_MIN_LENGTH))
+    token = fields.String(required=True, validate=validate.Length(min=6, error=INVALID_TOKEN))
 
