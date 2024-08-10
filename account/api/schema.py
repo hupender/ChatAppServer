@@ -2,7 +2,7 @@ from marshmallow import Schema, ValidationError, fields, validate, validates, po
 from account.models import Users
 from django.core.validators import validate_email
 from common.error.schema import (
-    INVALID_USERNAME, 
+    INVALID_OTP,
     INVALID_FIRST_NAME, 
     INVALID_LAST_NAME, 
     INVALID_MOBILE_NUMBER, 
@@ -77,4 +77,11 @@ class OtpSchema(Schema):
     model = user_model
 
     username = fields.String(required=True)
+
+
+class ValidateOtpSchema(Schema):
+    model = user_model
+
+    username = fields.String(required=True)
+    otp = fields.String(required=True, validate=validate.Length(min=6, error=INVALID_OTP))
 

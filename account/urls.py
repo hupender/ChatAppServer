@@ -9,5 +9,6 @@ urlpatterns = [
     # path("update-user/", auth.update_user, name="update_user"),
     path("refresh-token/",auth.refresh_token, name="refresh_token"),
     path("change-password/", accounts.ChangePassword.as_view(), name="change_password"),
-    path("get-otp", auth.send_otp, name="send_otp"),
+    path("get-otp/", auth.send_otp, name="send_otp"),
+    path("validate-otp/", auth.validate_otp, name="validate_otp"),
 ]

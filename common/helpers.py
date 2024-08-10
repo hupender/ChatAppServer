@@ -24,12 +24,24 @@ def make_response(request, response_type, response_text, response_data=None):
 
 
 def generate_random_string(length):
+    """
+    generates random string of number and alphabets
+    """
+
     characters = "abcdefghijklmnopqrstuvwxyz123456789"
     return ''.join(random.choices(characters, k=length))
 
 def validate_password(value):
+    """
+    validates password
+    """
+
     regex = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$"
     return bool(re.fullmatch(regex,value))
 
 def create_random_number(length=6):
+    """
+    create random number of length(otp)
+    """
+    
     return random.randint(10**(length-1), 10**length-1)

@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from common.api_exception import BadRequestData
+from common.error.exceptions import EMAIL_MOBILE_NOT_EXIST, EMAIL_MOBILE_NOT_VERIFIED, USER_NOT_FOUND
 from common.error.schema import (MOBILE_NUMBER_CONTAIN_ALPHANUMERIC, INCORRECT_LENGTH_OF_MOBILE_NUMBER, LANGUAGE_NOT_EXIST)
 from django.core.validators import validate_email
 from django.contrib.auth import get_user_model
@@ -42,4 +44,12 @@ def isMobileNumber(value):
 def get_user(username):
     user_model = get_user_model()
     user = user_model.objects.get(Q(username=username) | Q(email=username) | Q(mobile_number=username), is_active=True)
+    if not user:
+        raise BadRequestData(errors=USER_NOT_FOUND)
+    
+    if not (user.email or user.mobile_number):
+        raise EMAIL_MOBILE_NOT_EXIST
+    if not (user.email_verified or user.mobile_verified):
+        raise EMAIL_MOBILE_NOT_VERIFIED
+    
     return user

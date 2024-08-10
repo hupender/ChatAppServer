@@ -123,6 +123,7 @@ JWT_PUBLIC_KEY = "/home/hupender/Projects/files/public.pem"
 JWT_TOKEN_EXPIRY = 86400
 
 REDIS_KEY_EXPIRY = 86400
+REDIS_OTP_EXPIRY = 600
 REDIS_SENTINAL_SERVER = {
     "HOST": "localhost",
     "PORT": "26379",

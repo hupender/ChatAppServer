@@ -5,14 +5,16 @@ import jwt
 from django.conf import settings
 from django.utils import timezone
 from common.decorators import validate_json_request, json_token_required
-from account.api.schema import UserSchema, LoginSchema, OtpSchema
+from account.api.schema import UserSchema, LoginSchema, OtpSchema, ValidateOtpSchema
 from common.api_exception import api_exception_handler, BadRequestData
 from common.error.exceptions import USER_NOT_FOUND, EMAIL_MOBILE_NOT_VERIFIED, EMAIL_MOBILE_NOT_EXIST
+from common.error.schema import INVALID_OTP
 from common.helpers import make_response, generate_random_string, create_random_number
 from account.helpers import get_user
 from common.success.messages import (
     ACCOUNT_CREATED_SUCCESSFULLY,
     LOGIN_SUCCESSFULL,
+    OTP_VALIDATED,
     REFRESH_TOKEN_SUCCESSFULL,
     OTP_SENT,
 )
@@ -149,7 +151,7 @@ def send_otp(request):
 
     otp = create_random_number()
 
-    session_key = f"user:{user.id}:session"
+    session_key = f"user:{user.id}:otp"
     otp_cache.set(session_key, otp)
     response = {}
     response["otp"]=otp
@@ -158,3 +160,36 @@ def send_otp(request):
         {"response": make_response(request, "POST", message, response), "meta": {}}, status=200
     )
     
+
+@require_http_methods(["POST"])
+@api_exception_handler
+@validate_json_request
+def validate_otp(request):
+    schema = ValidateOtpSchema()
+    message = OTP_VALIDATED
+
+    try:
+        data = schema.loads(request.body)
+    except Exception as e:
+        raise BadRequestData(errors=str(e))
+    
+    try:
+        user = get_user(data["username"])
+    except Exception as e:
+        raise BadRequestData(errors=str(e))
+    
+    
+    session_key = f"user:{user.id}:otp"
+    if not (otp_cache.get(session_key) == data["otp"]):
+        raise BadRequestData(errors=INVALID_OTP)
+    
+    token = create_random_number()
+    token_key = f"user:{user.id}:token"
+    otp_cache.set(token_key, token, ex=settings.REDIS_OTP_EXPIRY)
+
+    response = {}
+    response["token"] = token
+
+    return JsonResponse(
+        {"response": make_response(request, "POST", message, response), "meta": {}}, status=200
+    )
