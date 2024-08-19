@@ -97,11 +97,14 @@ def login(request):
     )
 
 
-@require_http_methods(["GET"])
+@require_http_methods(["POST"])
 @api_exception_handler
 @validate_json_request
 @json_token_required
 def refresh_token(request):
+    """
+    This api can be used to refresh jwt token using previous token
+    """
     message = REFRESH_TOKEN_SUCCESSFULL
     session_id = generate_random_string(32)
     session_cache_key = f"user:{request.user.id}:session"
@@ -131,6 +134,9 @@ def refresh_token(request):
 @api_exception_handler
 @validate_json_request
 def send_otp(request):
+    """
+    This api can be used to send otp for all kinds o verification
+    """
     schema = OtpSchema()
     message = OTP_SENT
 
@@ -166,6 +172,9 @@ def send_otp(request):
 @api_exception_handler
 @validate_json_request
 def validate_otp(request):
+    """
+    This api will validate the otp and give a token which can be used in further steps
+    """
     schema = ValidateOtpSchema()
     message = OTP_VALIDATED
 
@@ -199,6 +208,9 @@ def validate_otp(request):
 @api_exception_handler
 @validate_json_request
 def change_password(request):
+    """
+    This api can be used to change password using otp verification
+    """
     schema = PasswordChangeOtpSchema()
     message = PASSWORD_CHANGED_SUCCESS
 

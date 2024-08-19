@@ -23,3 +23,15 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+    def update_fields(self, obj, **kwargs):
+        """
+        Used to update the specified fields
+        """
+        fields = []
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(obj, key, value)
+                fields.append(key)
+
+        obj.save(update_fields = fields)
