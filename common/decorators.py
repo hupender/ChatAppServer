@@ -53,8 +53,9 @@ def json_token_required(f):
         except:
             raise NotAuthenticated(errors=INVALID_TOKEN)
         user_model = get_user_model()
-        user = user_model.objects.get(id=payload["user_id"])
-        if not user:
+        try:
+            user = user_model.objects.get(id=payload["user_id"])
+        except:
             raise NotFound(errors=USER_NOT_FOUND)
         
         request.user = user

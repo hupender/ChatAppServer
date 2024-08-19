@@ -133,3 +133,6 @@ class GetUserDetailsSchema(Schema):
     last_name = fields.String(dump_only=True)
     email = fields.Email(dump_only=True)
     mobile_number = fields.String(dump_only=True)
+
+class DeleteUserSchema(Schema):
+    model = user_model

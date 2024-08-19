@@ -1,10 +1,10 @@
 from common.views import BaseView
 from django.contrib.auth import get_user_model
-from .schema import ChangePasswordSchema, GetUserDetailsSchema, UpdateUserSchema
-from common.success.messages import PASSWORD_CHANGED_SUCCESS, USER_UPDATED_SUCCESSFULLY
+from .schema import ChangePasswordSchema, DeleteUserSchema, GetUserDetailsSchema, UpdateUserSchema
+from common.success.messages import DELETE_ACCOUNT, GET_USER_DETAILS, PASSWORD_CHANGED_SUCCESS, USER_UPDATED_SUCCESSFULLY
 from django.http import JsonResponse
-from common.api_exception import BadRequestData
-from common.error.exceptions import CAN_NOT_UPDATE_OTHER_USER, INVALID_PASSWORD
+from common.api_exception import BadRequestData, NotFound
+from common.error.exceptions import CAN_NOT_UPDATE_OTHER_USER, INVALID_PASSWORD, USER_NOT_FOUND
 from common.helpers import make_response
 from common.redis_proxy import data_cache
 
@@ -70,7 +70,26 @@ class GetUserDetails(BaseView):
     """
     model = user_model
     schema = GetUserDetailsSchema
+    http_method_names = ["get"]
+    message = GET_USER_DETAILS
 
     def get(self, request, *args, **kwargs):
         data = self.schema.dump(self.schema.user)
         return JsonResponse(make_response(request, "GET", response_data=data, response_text=self.message), status=200)
+    
+
+class DeleteAccount(BaseView):
+    """
+    This api can be used to delete user account
+    """
+
+    model = user_model
+    schema = DeleteUserSchema
+    http_method_names = ["delete"]
+    message = DELETE_ACCOUNT
+
+    def delete(self, request, *args, **kwargs):
+        
+        user = self.schema.user
+        user.delete()
+        return JsonResponse(make_response(request, "DELETE", response_text=self.message), status=200)
