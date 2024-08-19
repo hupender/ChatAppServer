@@ -125,3 +125,11 @@ class UpdateUserSchema(Schema):
             if queryset.filter(mobile_number=mobile_number, is_active=True).exists():
                 raise ValidationError(MOBILE_NUMBER_EXISTS)
         return data
+    
+class GetUserDetailsSchema(Schema):
+    model = user_model
+
+    first_name = fields.String(dump_only=True)
+    last_name = fields.String(dump_only=True)
+    email = fields.Email(dump_only=True)
+    mobile_number = fields.String(dump_only=True)

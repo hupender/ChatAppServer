@@ -1,6 +1,6 @@
 from common.views import BaseView
 from django.contrib.auth import get_user_model
-from .schema import ChangePasswordSchema, UpdateUserSchema
+from .schema import ChangePasswordSchema, GetUserDetailsSchema, UpdateUserSchema
 from common.success.messages import PASSWORD_CHANGED_SUCCESS, USER_UPDATED_SUCCESSFULLY
 from django.http import JsonResponse
 from common.api_exception import BadRequestData
@@ -62,3 +62,15 @@ class UpdateUser(BaseView):
         user.update_fields(user, **data)
 
         return JsonResponse(make_response(request, "PUT", response_data=self.schema.dump(user), response_text=self.message), status=202)
+    
+
+class GetUserDetails(BaseView):
+    """
+    This api can be used to get user details
+    """
+    model = user_model
+    schema = GetUserDetailsSchema
+
+    def get(self, request, *args, **kwargs):
+        data = self.schema.dump(self.schema.user)
+        return JsonResponse(make_response(request, "GET", response_data=data, response_text=self.message), status=200)
