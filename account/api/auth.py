@@ -14,6 +14,7 @@ from account.helpers import get_user
 from common.success.messages import (
     ACCOUNT_CREATED_SUCCESSFULLY,
     LOGIN_SUCCESSFULL,
+    LOGOUT_SUCCESSFULL,
     OTP_VALIDATED,
     PASSWORD_CHANGED_SUCCESS,
     REFRESH_TOKEN_SUCCESSFULL,
@@ -94,6 +95,24 @@ def login(request):
     
     return JsonResponse(
         {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200
+    )
+
+
+@require_http_methods(["POST"])
+@api_exception_handler
+@json_token_required
+def log_out(request):
+    """
+    This api can be used to log out the user
+    """
+
+    message = LOGOUT_SUCCESSFULL
+    user = request.user
+    session_cache_key = f"user:{user.id}:session"
+    data_cache.delete(session_cache_key)
+
+    return JsonResponse(
+        {"response": make_response(request, "POST", response_text=message), "meta": {}}, status=201
     )
 
 

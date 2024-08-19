@@ -13,4 +13,5 @@ urlpatterns = [
     path("change-password-using-otp/", auth.change_password, name="change_password_using_otp"),
     path("update-account/", accounts.UpdateUser.as_view(), name="update_user_details"),
     path("get-user-details/", accounts.GetUserDetails.as_view(), name="get_user_details"),
+    path("logout/", auth.log_out, name="log_out"),
 ]
