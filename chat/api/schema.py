@@ -22,15 +22,16 @@ class GetAllRoomSchema(Schema):
 
     group_name = fields.Function(lambda obj: obj.group.name, dump_only=True)
     last_update = fields.Method("get_update_time")
-    group_id = fields.Function(lambda obj: obj.id)
+    group_id = fields.Function(lambda obj: obj.group.id)
 
     def get_update_time(self, obj):
         return obj.group.update_ts.strftime('%Y-%m-%d %H:%M:%S')
 
-class ReceiveMessageSchema(Schema):
+class MessageSchema(Schema):
     model = Message
     
-    message = fields.String(load_only=True)
+    message = fields.String()
+    sender = fields.String(dump_only=True)
     group_id = fields.UUID(load_only=True)
 
 class CreateGroupSchema(Schema):
