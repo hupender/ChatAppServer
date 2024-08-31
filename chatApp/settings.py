@@ -139,6 +139,7 @@ REDIS_OTP_EXPIRY = 600
 REDIS_SENTINAL_SERVER = {
     "HOST": "localhost",
     "PORT": "26379",
+    "BROKER_DB": "10",
     "DATA_DB": "11",
     "OTP_DB": "12",
     "CHAT_DB": "13",
