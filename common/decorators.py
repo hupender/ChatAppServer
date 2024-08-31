@@ -24,12 +24,14 @@ def validate_json_request(f):
         try:
             if request.method in ["PUT", "POST"]:
                 body = json.loads(request.body)
-                if not isinstance(body, dict):
+                # TODO request should be only dict type
+                if not (isinstance(body, dict) or isinstance(body,list)):
                     raise BadRequestData(errors = INVALID_JSON_REQUEST_FORMAT)
-                request.username = body.get("username",None)
+                if isinstance(body, dict):
+                    request.username = body.get("username",None)
             else:
                 raise MethodNotAllowed(request.method)
-        except:
+        except Exception as e:
             raise BadRequestData(errors = INVALID_JSON_REQUEST_FORMAT)
         return f(request, *args, **kwargs)
     
@@ -44,6 +46,8 @@ def json_token_required(f):
     @wraps(f)
     def func(request, *args, **kwargs):
         token = request.META.get("HTTP_CHAT_API_TOKEN", None)
+        # cookie authentication alonng with header
+        token = request.COOKIES.get("CHAT-API-TOKEN", token)
         if not token:
             raise AuthenticationFailed(errors=NO_TOKEN)
         with open(settings.JWT_PUBLIC_KEY) as file:
