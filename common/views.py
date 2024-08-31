@@ -30,3 +30,28 @@ class BaseView(View):
 
     def delete(self, request, *args, **kwargs):
         pass
+
+class BulkBaseView(View):
+    schema = None
+    message = ""
+    
+    @method_decorator(api_exception_handler)
+    @method_decorator(validate_json_request)
+    @method_decorator(json_token_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.schema = self.schema(many=True)
+        self.schema.user = request.user
+        self.schema.account = request.account
+        return super(BulkBaseView, self).dispatch(request, *args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        pass
+    
+    def put(self, request, *args, **kwargs):
+        pass
+
+    def delete(self, request, *args, **kwargs):
+        pass
