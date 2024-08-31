@@ -88,14 +88,16 @@ def login(request):
     }
 
     token = jwt.encode(payload, private_key, settings.JWT_ALGORITHM)
-    response = {}
-    response["user_id"] = user.id
-    response["token"] = token
-    response["account_number"] = user.account_number
+    result = {}
+    result["user_id"] = user.id
+    result["token"] = token
+    result["account_number"] = user.account_number
     
-    return JsonResponse(
-        {"response": make_response(request, "POST", response_text=message, response_data=response), "meta": {}}, status=200
+    response = JsonResponse(
+        {"response": make_response(request, "POST", response_text=message, response_data=result), "meta": {}}, status=200
     )
+    response.set_cookie("CHAT-API-TOKEN", result["token"], 86400, httponly=True, secure=True, samesite='None')
+    return response
 
 
 @require_http_methods(["POST"])
