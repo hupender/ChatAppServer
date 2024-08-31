@@ -20,7 +20,7 @@ class ChatAuthentication(BaseMiddleware):
         code.
         """
         try:
-            token = self.extract_token(scope)
+            token = await self.extract_token(scope)
         except:
             await send({
                 "type": "websocket.close"
@@ -36,7 +36,7 @@ class ChatAuthentication(BaseMiddleware):
             })
 
     
-    def extract_token(self, scope):
+    async def extract_token(self, scope):
         """
         Extract the token from headers
         """
@@ -53,23 +53,22 @@ class ChatAuthentication(BaseMiddleware):
         try:
             payload = jwt.decode(token, public_key, settings.JWT_ALGORITHM)
         except:
-            return None
+            # return None
             raise NotAuthenticated(errors=INVALID_TOKEN)
         user_model = get_user_model()
         try:
             # user = await user_model.objects.get(id=payload["user_id"])
             user = await database_sync_to_async(user_model.objects.get)(id=payload["user_id"])
         except:
-            return None
+            # return None
             raise NotFound(errors=USER_NOT_FOUND)
         
         session_key = f"user:{user.id}:session"
         session = data_cache.get(session_key)
         if not session or session != payload["session_id"]:
-            return None
+            # return None
             raise NotFound(errors=USER_NOT_FOUND)
         if not user.is_active:
-            return None
+            # return None
             raise AuthenticationFailed(errors=USER_BLOCKED)
-        
         return user
