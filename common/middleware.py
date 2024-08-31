@@ -3,6 +3,7 @@ from django.conf import settings
 import jwt
 from django.contrib.auth import get_user_model
 from .redis_proxy import data_cache
+from channels.db import database_sync_to_async
 
 from common.api_exception import AuthenticationFailed, NotAuthenticated, NotFound
 from common.error.exceptions import INVALID_TOKEN, NO_TOKEN, USER_BLOCKED, USER_NOT_FOUND
@@ -18,9 +19,16 @@ class ChatAuthentication(BaseMiddleware):
         ASGI application; can insert things into the scope and run asynchronous
         code.
         """
-        token = self.extract_token(scope)
-        is_valid = self.validate_token(token, scope)
-        if is_valid:
+        try:
+            token = self.extract_token(scope)
+        except:
+            await send({
+                "type": "websocket.close"
+            })
+            raise NotAuthenticated(errors=INVALID_TOKEN)
+        user = await self.validate_token(token)
+        if user:
+            scope["user"]=user
             return await self.inner(scope, receive, send)
         else:
             await send({
@@ -33,10 +41,11 @@ class ChatAuthentication(BaseMiddleware):
         Extract the token from headers
         """
         headers = dict(scope["headers"])
-        token = headers.get(b'chat-api-token', b'').decode()
+        token_string = headers.get(b'cookie', b'').decode()
+        token = token_string.split('CHAT-API-TOKEN=')[-1]
         return token
     
-    def validate_token(self, token, scope):
+    async def validate_token(self, token):
         if not token:
             raise AuthenticationFailed(errors=NO_TOKEN)
         with open(settings.JWT_PUBLIC_KEY) as file:
@@ -44,23 +53,23 @@ class ChatAuthentication(BaseMiddleware):
         try:
             payload = jwt.decode(token, public_key, settings.JWT_ALGORITHM)
         except:
-            return False
+            return None
             raise NotAuthenticated(errors=INVALID_TOKEN)
         user_model = get_user_model()
         try:
-            user = user_model.objects.get(id=payload["user_id"])
+            # user = await user_model.objects.get(id=payload["user_id"])
+            user = await database_sync_to_async(user_model.objects.get)(id=payload["user_id"])
         except:
-            return False
+            return None
             raise NotFound(errors=USER_NOT_FOUND)
         
         session_key = f"user:{user.id}:session"
         session = data_cache.get(session_key)
         if not session or session != payload["session_id"]:
-            return False
+            return None
             raise NotFound(errors=USER_NOT_FOUND)
         if not user.is_active:
-            return False
+            return None
             raise AuthenticationFailed(errors=USER_BLOCKED)
         
-        scope["user"] = user
-        return True
+        return user
