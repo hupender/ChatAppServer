@@ -35,3 +35,6 @@ class BaseModel(models.Model):
                 fields.append(key)
 
         obj.save(update_fields = fields)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.id}>"
