@@ -34,6 +34,17 @@ class MessageSchema(Schema):
     sender = fields.String(dump_only=True)
     group_id = fields.UUID(load_only=True)
 
+class AllMessageSchema(Schema):
+    model = Message
+    
+    message = fields.Function(lambda obj: obj.content)
+    sender = fields.Function(lambda obj: obj.sender.id)
+    group_id = fields.Function(lambda obj: obj.room.id)
+    message_time = fields.Method("get_message_time")
+
+    def get_message_time(self, obj):
+        return obj.update_ts.strftime('%Y-%m-%d %H:%M:%S')
+
 class CreateGroupSchema(Schema):
     model = ChatRoom
 
