@@ -24,14 +24,17 @@ def save_message_to_group(room_id, message, user_id):
     logger.info("Message saved successfully to database.")
 
 @celery_app.task
-def notify_active_user(group_id):
+def notify_active_user(group_id, message, sender):
     group_members = GroupMember.objects.filter(group=group_id).select_related("member")
     channel_layer = get_channel_layer()
     for group in group_members:
         channel_name = chat_cache.get(group.member.id, None)
         if channel_name:
             async_to_sync(channel_layer.send)(channel_name,{
-                "type": "notify"
+                "type": "notify",
+                "group_id": str(group_id),
+                "message": message,
+                "sender": sender,
             })
     logger.info("Notified active users")
             
