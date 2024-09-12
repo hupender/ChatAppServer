@@ -15,6 +15,7 @@ from common.error.schema import (
 )
 from account.helpers import clean_mobile_number
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
 
 class GetAllRoomSchema(Schema):
@@ -30,9 +31,14 @@ class GetAllRoomSchema(Schema):
 class MessageSchema(Schema):
     model = Message
     
+    type = fields.String()
     message = fields.String()
-    sender = fields.String(dump_only=True)
+    sender = fields.String(dump_only=True, default="System")
     group_id = fields.UUID(load_only=True)
+    message_time = fields.Method("get_message_time")
+
+    def get_message_time(self, obj):
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 class AllMessageSchema(Schema):
     model = Message
