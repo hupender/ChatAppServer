@@ -17,8 +17,7 @@ def make_response(request, response_type, response_text, response_data=None):
 
     result["message"] = _(response_text)
 
-    if response_data:
-        result["payload"] = response_data
+    result["payload"] = response_data
     
     return result
 
