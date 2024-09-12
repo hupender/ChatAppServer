@@ -1,8 +1,8 @@
 from django.http import JsonResponse
 from common.helpers import make_response
 from common.views import BaseView, BulkBaseView
-from .schema import AddToGroupSchema, CreateGroupSchema, GetAllRoomSchema
-from chat.models import ChatRoom, GroupMember
+from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema
+from chat.models import ChatRoom, GroupMember, Message
 from common.api_exception import BadRequestData
 from django.contrib.auth import get_user_model
 
@@ -73,6 +73,26 @@ class GetUserGroups(BulkBaseView):
             {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_data)), "meta": {}}, status=200
         )
         
+class GetGroupMessage(BulkBaseView):
+    """
+    This api can be uesd to get all message for a chat
+    """
+
+    message = "Messages fetched successfully."
+    model = Message
+    schema = AllMessageSchema
+    http_method_names = ["get"]
+
+    def get(self, request, group_id, *args, **kwargs):
+        user = self.schema.user
+
+        group_message_data = self.model.objects.filter(room=group_id)
+        print(group_message_data)
+        print(self.schema.dump(group_message_data))
+
+        return JsonResponse(
+            {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_message_data)), "meta": {}}, status=200
+        )
 
         
 

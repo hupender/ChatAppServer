@@ -14,6 +14,11 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
 
     schema = MessageSchema()
     model = Message
+    active_users = {}
+    # TODO think
+    # will store user_id: group_id 
+    # or we can do group_id : [] but it will not be much help 
+    # or we can do online_users: [] and group_user: [] 
 
     async def connect(self):
         self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
@@ -34,6 +39,8 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
 
         # save message to db
         save_message_to_group.delay(self.room_id, data["message"], self.user.id)
+
+        # notify offline users
 
         # it will send message to active users who are in group
         await self.channel_layer.group_send(self.roomGroupName, {
