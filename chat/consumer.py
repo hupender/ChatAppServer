@@ -49,23 +49,23 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         # TODO notify offline users
 
         # notify users active in another group
-        notify_active_user.delay(self.room_id, data["message"], self.user.first_name)
+        notify_active_user.delay(self.room_id, data["message"], self.user.id)
 
         # it will send message to active users who are in group
         await self.channel_layer.group_send(self.roomGroupName, {
             "type": "sendMessage",
             "message": data["message"],
-            "sender": self.user.first_name,
+            "sender": self.user.id,
             # "group": data["group_id"],
         })
 
     async def sendMessage(self, event):
-        event["type"] = "message"
+        # event["type"] = "message"
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
 
     async def notify(self, event):
-        event["type"] = "notification"
+        # event["type"] = "notification"
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
 

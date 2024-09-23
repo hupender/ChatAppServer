@@ -33,8 +33,8 @@ class MessageSchema(Schema):
     
     type = fields.String()
     message = fields.String()
-    sender = fields.String(dump_only=True, default="System")
-    group_id = fields.UUID(load_only=True)
+    sender = fields.UUID(dump_only=True)
+    group_id = fields.UUID()
     message_time = fields.Method("get_message_time")
 
     def get_message_time(self, obj):

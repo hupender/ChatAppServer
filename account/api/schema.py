@@ -129,6 +129,7 @@ class UpdateUserSchema(Schema):
 class GetUserDetailsSchema(Schema):
     model = user_model
 
+    id = fields.UUID(dump_only=True)
     first_name = fields.String(dump_only=True)
     last_name = fields.String(dump_only=True)
     email = fields.Email(dump_only=True)
