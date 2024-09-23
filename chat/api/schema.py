@@ -1,7 +1,7 @@
 from marshmallow import Schema, ValidationError, fields, validate, validates, post_load, validates_schema
 from account.models import Users
 from django.core.validators import validate_email
-from chat.models import ChatRoom, GroupMember, Message
+from chat.models import ChatRoom, GroupMember, Message, UserFriends
 from common.error.schema import (
     INVALID_OTP,
     INVALID_FIRST_NAME, 
@@ -82,5 +82,18 @@ class AddToGroupSchema(Schema):
             
             data = [{"member": user, "group": chat_set[0]} for user in qset]
         return data
+
+class FriendSchema(Schema):
+    model = UserFriends
+    user_model = get_user_model()
+
+    friend = fields.UUID(required=True, data_key="friend_id")
+
+    @validates("friend")
+    def validate_friend(self, value):
+        try:
+            self.friend = self.user_model.objects.get(id=value)
+        except:
+            raise ValidationError("User does not exist in the system", "friend")
 
 

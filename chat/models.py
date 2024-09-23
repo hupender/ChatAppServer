@@ -23,3 +23,7 @@ class UserMessage(BaseModel):
 class GroupMember(BaseModel):
     group = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
     member = models.ForeignKey(Users, on_delete=models.CASCADE)
+
+class UserFriends(BaseModel):
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="user_set")
+    friend = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="friend_set")
