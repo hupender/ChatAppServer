@@ -137,3 +137,11 @@ class GetUserDetailsSchema(Schema):
 
 class DeleteUserSchema(Schema):
     model = user_model
+
+class SearchUserSchema(Schema):
+    model = user_model
+
+    username = fields.String(required=True)
+    quick_search = fields.Boolean(load_only=True)
+    is_friend = fields.Boolean(load_only=True)
+    sortby = fields.String()

@@ -1,12 +1,14 @@
 from common.views import BaseView
 from django.contrib.auth import get_user_model
-from .schema import ChangePasswordSchema, DeleteUserSchema, GetUserDetailsSchema, UpdateUserSchema
+from .schema import ChangePasswordSchema, DeleteUserSchema, GetUserDetailsSchema, UpdateUserSchema, SearchUserSchema
 from common.success.messages import DELETE_ACCOUNT, GET_USER_DETAILS, PASSWORD_CHANGED_SUCCESS, USER_UPDATED_SUCCESSFULLY
 from django.http import JsonResponse
 from common.api_exception import BadRequestData, NotFound
 from common.error.exceptions import CAN_NOT_UPDATE_OTHER_USER, INVALID_PASSWORD, USER_NOT_FOUND
 from common.helpers import make_response
 from common.redis_proxy import data_cache
+from chat.models import UserFriends
+from django.db.models import Q
 
 
 user_model = get_user_model()
@@ -93,3 +95,34 @@ class DeleteAccount(BaseView):
         user = self.schema.user
         user.delete()
         return JsonResponse(make_response(request, "DELETE", response_text=self.message), status=200)
+
+class SearchAccount(BaseView):
+    """
+    This api can be used for searching user using username
+    """
+
+    model = user_model
+    schema = SearchUserSchema
+    http_method_names = ["get"]
+    message = "Searched users successfully."
+
+    def get(self, request, *args, **kwargs):
+        import pdb;pdb.set_trace()
+        try:
+            data = self.schema.loads(request.GET)
+        except Exception as e:
+            raise BadRequestData(errors=str(e))
+        
+        user = self.schema.user
+        
+        qset = self.model.objects.all()
+        if hasattr(data, "is_friend"):
+            UserFriends.objects.filter(Q(user=user) | Q(friend=user))
+
+            self.model.objects.prefetch_related("user_set", "friend_set")
+        if hasattr(data, "quick_search"):
+            qset = qset.filter(username__icontains=data["username"])
+        else:
+            qset = qset.filter(username__eq=data["username"])
+        # qset = self.model.objects.filter()
+        return JsonResponse({"hi":"this is it"})

@@ -15,4 +15,5 @@ urlpatterns = [
     path("get-user-details/", accounts.GetUserDetails.as_view(), name="get_user_details"),
     path("logout/", auth.log_out, name="log_out"),
     path("delete-account/", accounts.DeleteAccount.as_view(), name="delete_account"),
+    path("search-users/", accounts.SearchAccount.as_view(), name="search_users"),
 ]
