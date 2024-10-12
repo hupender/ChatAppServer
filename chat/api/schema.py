@@ -95,6 +95,8 @@ class FriendSchema(Schema):
             self.friend = self.user_model.objects.get(id=value)
         except:
             raise ValidationError("User does not exist in the system", "friend")
+        if self.friend == self.user:
+            raise ValidationError("Can not send friend request to own", "friend")
         
 class GetFriendRequestSchema(Schema):
     model = UserFriends

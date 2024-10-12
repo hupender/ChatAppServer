@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from common.error.exceptions import USER_NOT_FOUND
+from common.error.exceptions import NOT_FOUND_ERROR
 from common.helpers import make_response
 from common.views import BaseView, BulkBaseView
 from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema, GetFriendRequestSchema, UpdateFriendRequestSchema
@@ -114,7 +114,16 @@ class AddFriend(BaseView):
         user = self.schema.user
         friend = self.schema.friend
 
-        res = self.model.objects.create(user=user, friend=friend, status="pending")
+        res, is_created = self.model.objects.get_or_create(
+            user=user, 
+            friend=friend,
+            defaults={
+                "status": "pending"
+            }
+        )
+        if res.status == "rejected":
+            res.status = "pending"
+            res.save()
 
         response = {}
         response["id"] = res.id
@@ -155,7 +164,7 @@ class UpdateFriendRequest(BaseView):
         try:
             friend_request = self.model.objects.get(id=id)
         except self.model.DoesNotExist:
-            raise NotFound(errors=USER_NOT_FOUND)
+            raise NotFound(errors=NOT_FOUND_ERROR)
         if friend_request.user == user and data.get("request_status") == "approved":
             raise PermissionDenied()
         
