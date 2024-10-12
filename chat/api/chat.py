@@ -1,9 +1,10 @@
 from django.http import JsonResponse
+from common.error.exceptions import USER_NOT_FOUND
 from common.helpers import make_response
 from common.views import BaseView, BulkBaseView
-from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema, GetFriendRequest
+from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema, GetFriendRequestSchema, UpdateFriendRequestSchema
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
-from common.api_exception import BadRequestData
+from common.api_exception import BadRequestData, NotFound, PermissionDenied
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
@@ -124,15 +125,44 @@ class AddFriend(BaseView):
     
 class GetRequestList(BaseView):
     model = UserFriends
-    schema = GetFriendRequest
+    schema = GetFriendRequestSchema
     http_method_names = ["get"]
     message = "Fetched friend requests successfully."
 
     def get(self, request, *args, **kwargs):
         user = self.schema.user
         
-        queryset = self.model.objects.filter(friend=user, friend__is_active=True).select_related("user", "friend")
+        queryset = self.model.objects.filter(
+            friend=user, friend__is_active=True, status="pending"
+        ).select_related("user", "friend")
 
         return JsonResponse(
             make_response(request, "GET", response_data=self.schema.dump(queryset, many=True), response_text=self.message), status=200
+        )
+    
+class UpdateFriendRequest(BaseView):
+    model = UserFriends
+    schema = UpdateFriendRequestSchema
+    message = "Friend request updated successfully."
+    http_method_names = ["put"]
+
+    def put(self, request, id, *args, **kwargs):
+        user = self.schema.user
+        try:
+            data = self.schema.loads(request.body)
+        except Exception as e:
+            raise BadRequestData(errors=e.messages_dict)
+        try:
+            friend_request = self.model.objects.get(id=id)
+        except self.model.DoesNotExist:
+            raise NotFound(errors=USER_NOT_FOUND)
+        if friend_request.user == user and data.get("request_status") == "approved":
+            raise PermissionDenied()
+        
+        friend_request.status = data.get("request_status")
+        friend_request.save()
+
+        
+        return JsonResponse(
+            make_response(request, "PUT", response_data=self.schema.dump(friend_request), response_text=self.message), status=202
         )

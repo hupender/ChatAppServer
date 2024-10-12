@@ -96,7 +96,7 @@ class FriendSchema(Schema):
         except:
             raise ValidationError("User does not exist in the system", "friend")
         
-class GetFriendRequest(Schema):
+class GetFriendRequestSchema(Schema):
     model = UserFriends
 
     id = fields.String(dump_only=True)
@@ -104,6 +104,6 @@ class GetFriendRequest(Schema):
     username = fields.Function(lambda obj: obj.user.username)
     name = fields.Function(lambda obj: obj.user.get_full_name(obj.user))
     status = fields.Function(lambda obj: obj.status)
-    
 
-
+class UpdateFriendRequestSchema(GetFriendRequestSchema):
+    request_status = fields.String(load_only=True, validate=validate.OneOf(["rejected", "approved"]))
