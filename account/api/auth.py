@@ -96,7 +96,7 @@ def login(request):
     response = JsonResponse(
         {"response": make_response(request, "POST", response_text=message, response_data=result), "meta": {}}, status=200
     )
-    response.set_cookie("CHAT-API-TOKEN", result["token"], 86400, httponly=True, secure=True, samesite='None')
+    response.set_cookie("CHAT-API-TOKEN", result["token"], 86400, httponly=True,secure=False, samesite='None')
     return response
 
 

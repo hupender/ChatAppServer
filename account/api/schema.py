@@ -141,7 +141,11 @@ class DeleteUserSchema(Schema):
 class SearchUserSchema(Schema):
     model = user_model
 
-    username = fields.String(required=True)
-    quick_search = fields.Boolean(load_only=True)
+    username = fields.String(required=True, data_key="name")
+    quick_search = fields.Boolean(load_only=True, default=False) # if true match the exact string
     is_friend = fields.Boolean(load_only=True)
-    sortby = fields.String()
+    sortby = fields.String(load_only=True)
+
+    id = fields.UUID(dump_only=True)
+    first_name = fields.String(dump_only=True)
+    last_name = fields.String(dump_only=True)

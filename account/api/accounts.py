@@ -107,22 +107,21 @@ class SearchAccount(BaseView):
     message = "Searched users successfully."
 
     def get(self, request, *args, **kwargs):
-        import pdb;pdb.set_trace()
         try:
-            data = self.schema.loads(request.GET)
+            data = self.schema.load(request.GET)
         except Exception as e:
             raise BadRequestData(errors=str(e))
         
         user = self.schema.user
         
-        qset = self.model.objects.all()
-        if hasattr(data, "is_friend"):
-            UserFriends.objects.filter(Q(user=user) | Q(friend=user))
+        qset = self.model.objects.exclude(id=user.id)
+        # if hasattr(data, "is_friend"):
+        #     UserFriends.objects.filter(Q(user=user) | Q(friend=user))
 
-            self.model.objects.prefetch_related("user_set", "friend_set")
-        if hasattr(data, "quick_search"):
-            qset = qset.filter(username__icontains=data["username"])
+        #     self.model.objects.prefetch_related("user_set", "friend_set")
+        if data.get("quick_search"):
+            qset = qset.filter(username=data["username"])
         else:
-            qset = qset.filter(username__eq=data["username"])
-        # qset = self.model.objects.filter()
-        return JsonResponse({"hi":"this is it"})
+            qset = qset.filter(username__icontains=data["username"])
+        
+        return JsonResponse(make_response(request, "GET", response_data=self.schema.dump(qset, many=True), response_text=self.message), status=200)
