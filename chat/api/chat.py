@@ -1,10 +1,12 @@
 from django.http import JsonResponse
 from common.helpers import make_response
 from common.views import BaseView, BulkBaseView
-from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema
+from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema, GetFriendRequest
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
 from common.api_exception import BadRequestData
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+
 
 class CreateGroup(BaseView):
     """
@@ -120,3 +122,17 @@ class AddFriend(BaseView):
             {"response": make_response(request, "POST", response_text=self.message, response_data=response), "meta": {}}, status=201
         )
     
+class GetRequestList(BaseView):
+    model = UserFriends
+    schema = GetFriendRequest
+    http_method_names = ["get"]
+    message = "Fetched friend requests successfully."
+
+    def get(self, request, *args, **kwargs):
+        user = self.schema.user
+        
+        queryset = self.model.objects.filter(friend=user, friend__is_active=True).select_related("user", "friend")
+
+        return JsonResponse(
+            make_response(request, "GET", response_data=self.schema.dump(queryset, many=True), response_text=self.message), status=200
+        )

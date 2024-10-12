@@ -112,3 +112,7 @@ class Users(BaseModel, AbstractUser):
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.first_name + " " + obj.last_name
