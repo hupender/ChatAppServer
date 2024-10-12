@@ -27,3 +27,4 @@ class GroupMember(BaseModel):
 class UserFriends(BaseModel):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="user_set")
     friend = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="friend_set")
+    status = models.CharField(verbose_name=_("Status of request"), max_length=50, default="pending")

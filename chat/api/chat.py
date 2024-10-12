@@ -111,7 +111,7 @@ class AddFriend(BaseView):
         user = self.schema.user
         friend = self.schema.friend
 
-        res = self.model.objects.create(user=user, friend=friend)
+        res = self.model.objects.create(user=user, friend=friend, status="pending")
 
         response = {}
         response["id"] = res.id
