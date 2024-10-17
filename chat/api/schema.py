@@ -123,4 +123,4 @@ class GetFriendRequestSchema(Schema):
     status = fields.Function(lambda obj: obj.status)
 
 class UpdateFriendRequestSchema(GetFriendRequestSchema):
-    request_status = fields.String(load_only=True, validate=validate.OneOf(["rejected", "approved"]))
+    request_status = fields.String(load_only=True, validate=validate.OneOf(["rejected", "approved"]), required=True)

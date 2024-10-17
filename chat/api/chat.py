@@ -162,9 +162,15 @@ class UpdateFriendRequest(BaseView):
             friend_request = self.model.objects.get(id=id)
         except self.model.DoesNotExist:
             raise NotFound(errors=NOT_FOUND_ERROR)
-        if friend_request.user == user and data.get("request_status") == "approved":
-            raise PermissionDenied()
         
+        if data.get("request_status") == "approved":
+            if friend_request.user == self.schema.user:
+                raise PermissionDenied()
+            # reject any reverse request if any exists
+            rev_request = self.model.objects.filter(user=friend_request.friend, friend=self.user).first()
+            if rev_request:
+                rev_request.status = "rejected"
+                rev_request.save()
         friend_request.status = data.get("request_status")
         friend_request.save()
 
