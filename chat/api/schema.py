@@ -2,6 +2,7 @@ from marshmallow import Schema, ValidationError, fields, validate, validates, po
 from account.models import Users
 from django.core.validators import validate_email
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
+from django.db.models import Q
 from common.error.schema import (
     INVALID_OTP,
     INVALID_FIRST_NAME, 
@@ -97,6 +98,20 @@ class FriendSchema(Schema):
             raise ValidationError("User does not exist in the system", "friend")
         if self.friend == self.user:
             raise ValidationError("Can not send friend request to own", "friend")
+        
+    @post_load
+    def validate_friend_request(self, data, many, partial):
+        # check if they are already friend or request exist with pending status
+        friend_request = self.model.objects.filter(
+            Q(user=self.friend, friend=self.user) | Q(user=self.user, friend=self.friend)
+        ).exclude(status="rejected")
+        if friend_request:
+            if friend_request[0].status == "approved":
+                raise ValidationError("You are already friends with this user.", "friend")
+            elif friend_request[0].status == "pending":
+                raise ValidationError("Friend Request already exists.", "request")
+
+        return data
         
 class GetFriendRequestSchema(Schema):
     model = UserFriends

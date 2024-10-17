@@ -109,21 +109,18 @@ class AddFriend(BaseView):
         try:
             data = self.schema.loads(request.body)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
         
         user = self.schema.user
         friend = self.schema.friend
 
-        res, is_created = self.model.objects.get_or_create(
-            user=user, 
+        res, is_created = self.model.objects.update_or_create(
+            user=user,
             friend=friend,
             defaults={
                 "status": "pending"
             }
         )
-        if res.status == "rejected":
-            res.status = "pending"
-            res.save()
 
         response = {}
         response["id"] = res.id
