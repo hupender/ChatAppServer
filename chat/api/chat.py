@@ -167,7 +167,7 @@ class UpdateFriendRequest(BaseView):
             if friend_request.user == self.schema.user:
                 raise PermissionDenied()
             # reject any reverse request if any exists
-            rev_request = self.model.objects.filter(user=friend_request.friend, friend=self.user).first()
+            rev_request = self.model.objects.filter(user=friend_request.friend, friend=user).first()
             if rev_request:
                 rev_request.status = "rejected"
                 rev_request.save()
