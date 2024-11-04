@@ -115,13 +115,24 @@ class SearchAccount(BaseView):
         user = self.schema.user
         
         qset = self.model.objects.exclude(id=user.id)
-        # if hasattr(data, "is_friend"):
-        #     UserFriends.objects.filter(Q(user=user) | Q(friend=user))
+        # import pdb;pdb.set_trace()
+        if "is_friend" in data:
+            user_friends = UserFriends.objects.filter((Q(user=user) | Q(friend=user)), status="approved").values_list("user", "friend")
+            friends = set()
+            for pair in user_friends:
+                friends.add(pair[0])
+                friends.add(pair[1])
+            if data.get("is_friend"):
+                qset = qset.filter(id__in=friends)
+            else:
+                qset = qset.exclude(id__in=friends)
 
-        #     self.model.objects.prefetch_related("user_set", "friend_set")
         if data.get("quick_search"):
             qset = qset.filter(username=data["username"])
         else:
             qset = qset.filter(username__icontains=data["username"])
+        
+        if not "is_friend" in data and not data.get("username"):
+            qset = qset.none()
         
         return JsonResponse(make_response(request, "GET", response_data=self.schema.dump(qset, many=True), response_text=self.message), status=200)

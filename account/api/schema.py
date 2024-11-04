@@ -1,4 +1,5 @@
 from marshmallow import Schema, ValidationError, fields, validate, validates, post_load
+from chat.models import UserFriends
 from account.models import Users
 from django.core.validators import validate_email
 from common.error.schema import (
@@ -15,6 +16,7 @@ from common.error.schema import (
 from account.helpers import clean_mobile_number
 from django.contrib.auth import get_user_model
 from common.helpers import validate_password
+from django.db.models import Q
 
 user_model = get_user_model()
 
@@ -149,3 +151,14 @@ class SearchUserSchema(Schema):
     id = fields.UUID(dump_only=True)
     first_name = fields.String(dump_only=True)
     last_name = fields.String(dump_only=True)
+    status = fields.Method("get_user_relation_status")
+
+    def get_user_relation_status(self, obj):
+        #TODO optimise this query
+        queryset = UserFriends.objects.filter(
+            Q(user=self.user, friend=obj) | Q(user=obj, friend=self.user)
+        ).order_by("-update_ts").first()
+        if queryset:
+            return queryset.status
+        else:
+            return None
