@@ -24,10 +24,12 @@ class CreateGroup(BaseView):
         try:
             data = self.schema.loads(request.body)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
 
         user = self.schema.user
         room = self.model.objects.create(name=data["group_name"], created_by=user)
+
+        GroupMember.objects.bulk_create([GroupMember(group=room, member=d) for d in self.schema.users])
         response = dict()
         response["room_id"] = room.id
 

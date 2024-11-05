@@ -56,6 +56,17 @@ class CreateGroupSchema(Schema):
     model = ChatRoom
 
     group_name = fields.String(load_only=True)
+    group_members = fields.List(fields.UUID(), required=True)
+
+    @validates("group_members")
+    def validate_members(self, value):
+        self.users = list(Users.objects.filter(id__in=value).exclude(id=self.user.id))
+        if len(self.users) != len(value):
+            raise ValidationError("Please enter unique user id's", "group_members")
+        if len(self.users)<1:
+            raise ValidationError("Atleast 1 other member should be added in the group")
+        self.users.append(self.user)
+        
 
 class AddToGroupSchema(Schema):
     model = GroupMember
