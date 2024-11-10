@@ -6,7 +6,7 @@ from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAl
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
 from common.api_exception import BadRequestData, NotFound, PermissionDenied
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Case, When, F, CharField
 
 
 class CreateGroup(BaseView):
@@ -75,10 +75,16 @@ class GetUserGroups(BaseView):
             data = self.schema.load(request.GET)
         except Exception as e:
             raise BadRequestData(errors=e.messages_dict)
+        group_data = self.model.objects.filter(member=user.id).annotate(
+            display_name = Case(
+                When(group__is_group=True, then=F("group__name")),
+                When(group__is_group=False, then=F("member__username")),
+                output_field=CharField()
+            )
+        ).select_related("group")
 
-        group_data = self.model.objects.filter(member=user.id).select_related("group")
-        if data.get("group_name", None):
-            group_data = group_data.filter(group__name__icontains=data["group_name"])
+        if data.get("display_name", None):
+            group_data = group_data.filter(display_name__icontains=data["display_name"])
 
         if data.get("has_chat", None):
             messages_group = set(Message.objects.all().values_list("room", flat=True))
