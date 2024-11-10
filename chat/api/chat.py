@@ -59,7 +59,7 @@ class AddToGroup(BulkBaseView):
             {"response": make_response(request, "POST", response_text=self.message, response_data=self.schema.dump(res)), "meta": {}}, status=200
         )
 
-class GetUserGroups(BulkBaseView):
+class GetUserGroups(BaseView):
     """
     This api can be used to get all the groups for a user
     """
@@ -71,11 +71,21 @@ class GetUserGroups(BulkBaseView):
 
     def get(self, request, *args, **kwargs):
         user = self.schema.user
+        try:
+            data = self.schema.load(request.GET)
+        except Exception as e:
+            raise BadRequestData(errors=e.messages_dict)
 
-        group_data = self.model.objects.filter(member=user.id)
+        group_data = self.model.objects.filter(member=user.id).select_related("group")
+        if data.get("group_name", None):
+            group_data = group_data.filter(group__name__icontains=data["group_name"])
+
+        if data.get("has_chat", None):
+            messages_group = set(Message.objects.all().values_list("room", flat=True))
+            group_data = [group for group in group_data if not(group.group.is_group == False and group.group.id not in messages_group)]
 
         return JsonResponse(
-            {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_data)), "meta": {}}, status=200
+            {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_data, many=True)), "meta": {}}, status=200
         )
         
 class GetGroupMessage(BulkBaseView):
@@ -173,7 +183,8 @@ class UpdateFriendRequest(BaseView):
             if rev_request:
                 rev_request.status = "rejected"
                 rev_request.save()
-            ChatRoom.objects.create(name="System", created_by=self.schema.user, is_group=False)
+            group = ChatRoom.objects.create(name="System", created_by=self.schema.user, is_group=False)
+            GroupMember.objects.bulk_create([GroupMember(group=group, member=friend_request.user), GroupMember(group=group, member=user)])
         friend_request.status = data.get("request_status")
         friend_request.save()
 

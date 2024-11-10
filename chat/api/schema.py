@@ -22,12 +22,22 @@ from datetime import datetime
 class GetAllRoomSchema(Schema):
     model = GroupMember
 
-    group_name = fields.Function(lambda obj: obj.group.name, dump_only=True)
+    group_name = fields.String(required=False, load_only=True)
+    # has_chat will filter out 1-1 chat with no messages
+    has_chat = fields.Boolean(required=False, load_only=True, default=False)
+
+    display_name = fields.Method("get_display_name")
     last_update = fields.Method("get_update_time")
     group_id = fields.Function(lambda obj: obj.group.id)
 
     def get_update_time(self, obj):
         return obj.group.update_ts.strftime('%Y-%m-%d %H:%M:%S')
+    
+    def get_display_name(self, obj):
+        if obj.group.is_group:
+            return obj.group.name
+        # fetch the other user username
+        return GroupMember.objects.filter(group=obj.group).exclude(member=self.user).first().member.username
 
 class MessageSchema(Schema):
     model = Message
