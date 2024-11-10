@@ -27,7 +27,7 @@ class CreateGroup(BaseView):
             raise BadRequestData(errors=e.messages_dict)
 
         user = self.schema.user
-        room = self.model.objects.create(name=data["group_name"], created_by=user)
+        room = self.model.objects.create(name=data["group_name"], created_by=user, is_group=True)
 
         GroupMember.objects.bulk_create([GroupMember(group=room, member=d) for d in self.schema.users])
         response = dict()
@@ -173,6 +173,7 @@ class UpdateFriendRequest(BaseView):
             if rev_request:
                 rev_request.status = "rejected"
                 rev_request.save()
+            ChatRoom.objects.create(name="System", created_by=self.schema.user, is_group=False)
         friend_request.status = data.get("request_status")
         friend_request.save()
 
