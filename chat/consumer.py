@@ -18,7 +18,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
 
     async def connect(self):
         query_params = parse_qs(self.scope["query_string"].decode())
-        self.room_id = query_params.get("group_id", [None])[0]
+        self.room_id = query_params.get("room_id", [None])[0]
         # TODO add validation for valid room id
         if self.room_id:
             self.roomGroupName = f"chat_{self.room_id}"
@@ -35,7 +35,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         response_data = {
             "type": "connection_message",
             "message": f"Connected to group {self.roomGroupName}",
-            "group_id": self.room_id
+            "room_id": self.room_id
         }
         await self.send(text_data=self.schema.dumps(response_data))
 

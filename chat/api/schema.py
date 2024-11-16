@@ -40,6 +40,7 @@ class MessageSchema(Schema):
     sender = fields.UUID(dump_only=True)
     group_id = fields.UUID()
     message_time = fields.Method("get_message_time")
+    room_id = fields.UUID()
 
     def get_message_time(self, obj):
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
