@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 import json
+from common.api_exception import NotFound
 from chat.models import ChatRoom, GroupMember, Message
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
@@ -19,7 +20,8 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         query_params = parse_qs(self.scope["query_string"].decode())
         self.room_id = query_params.get("room_id", [None])[0]
-        # TODO add validation for valid room id
+        if self.room_id and not await self.check_room_exists(self.room_id):
+            raise NotFound("Room does not exists.")
         if self.room_id:
             self.roomGroupName = f"chat_{self.room_id}"
         else:
@@ -38,6 +40,10 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             "room_id": self.room_id
         }
         await self.send(text_data=self.schema.dumps(response_data))
+
+    @database_sync_to_async
+    def check_room_exists(self, room_id):
+        return ChatRoom.objects.filter(id=room_id).exists()
 
     async def disconnect(self, code):
         chat_cache.delete(self.user.id)
