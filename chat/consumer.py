@@ -7,6 +7,7 @@ from chat.api.schema import GetAllRoomSchema, MessageSchema
 from common.redis_proxy import get_redis_instance
 from django.conf import settings
 from .tasks import save_message_to_group, notify_active_user
+from urllib.parse import parse_qs
 
 chat_cache = get_redis_instance("CHAT_DB")
 
@@ -16,9 +17,13 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
     model = Message
 
     async def connect(self):
-        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+        query_params = parse_qs(self.scope["query_string"].decode())
+        self.room_id = query_params.get("group_id", [None])[0]
         # TODO add validation for valid room id
-        self.roomGroupName = f"chat_{self.room_id}"
+        if self.room_id:
+            self.roomGroupName = f"chat_{self.room_id}"
+        else:
+            self.roomGroupName = "chat_home"
 
         await self.accept()
         await self.channel_layer.group_add(self.roomGroupName, self.channel_name)
