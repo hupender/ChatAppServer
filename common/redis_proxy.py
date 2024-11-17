@@ -30,6 +30,26 @@ class RedisProxy:
             self.redis_client.set(key, value, ex if ex else self.key_expiry)
         except redis.RedisError as err:
             raise Exception(str(err))
+        
+    def lset(self, key, value, ex=None):
+        try:
+            self.redis_client.lpush(key, value)
+            self.redis_client.expire(name=key, time=ex if ex else self.key_expiry)
+        except redis.RedisError as err:
+            raise Exception(str(err))
+
+    def ldel(self, key, value):
+        try:
+            return self.redis_client.lrem(key, 0, value)
+        except redis.RedisError as err:
+            raise Exception(str(err))
+
+    def get(self, key, default=None):
+        try:
+            value = self.redis_client.lrange(key, 0, -1)
+            return value.decode() if value else default
+        except redis.RedisError as err:
+            raise Exception(str(err))
 
     def get(self, key, default=None):
         try:
