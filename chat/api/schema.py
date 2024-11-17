@@ -17,6 +17,8 @@ from common.error.schema import (
 from account.helpers import clean_mobile_number
 from django.contrib.auth import get_user_model
 from datetime import datetime
+from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async, async_to_sync
 
 
 class GetAllRoomSchema(Schema):
@@ -36,11 +38,10 @@ class MessageSchema(Schema):
     model = Message
     
     type = fields.String()
-    message = fields.String()
+    message = fields.String(required=True)
     sender = fields.UUID(dump_only=True)
-    group_id = fields.UUID()
     message_time = fields.Method("get_message_time")
-    room_id = fields.UUID()
+    room_id = fields.UUID(required=True)
 
     def get_message_time(self, obj):
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
