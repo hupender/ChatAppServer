@@ -62,7 +62,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             "type": "sendMessage",
             "message": data["message"],
             "sender": self.user.id,
-            "group": data["group_id"],
+            "room_id": data["group_id"],
         })
 
     async def sendMessage(self, event):

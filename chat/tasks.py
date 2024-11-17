@@ -32,7 +32,7 @@ def notify_active_user(group_id, message, sender):
         if channel_name:
             async_to_sync(channel_layer.send)(channel_name,{
                 "type": "notify",
-                "group_id": str(group_id),
+                "room_id": str(group_id),
                 "message": message,
                 "sender": sender,
             })
