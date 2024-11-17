@@ -1,10 +1,11 @@
 from channels.middleware import BaseMiddleware
 from django.conf import settings
+from django.http import JsonResponse
 import jwt
 from django.contrib.auth import get_user_model
 from .redis_proxy import data_cache
 from channels.db import database_sync_to_async
-
+from urllib.parse import parse_qs
 from common.api_exception import AuthenticationFailed, NotAuthenticated, NotFound
 from common.error.exceptions import INVALID_TOKEN, NO_TOKEN, USER_BLOCKED, USER_NOT_FOUND
 
@@ -25,15 +26,25 @@ class ChatAuthentication(BaseMiddleware):
             await send({
                 "type": "websocket.close"
             })
-            raise NotAuthenticated(errors=INVALID_TOKEN)
-        user = await self.validate_token(token)
-        if user:
-            scope["user"]=user
-            return await self.inner(scope, receive, send)
-        else:
+            return
+        # TODO improve exception handling
+        if not token:
             await send({
                 "type": "websocket.close"
             })
+            print(INVALID_TOKEN)
+            return
+            raise NotAuthenticated(errors=INVALID_TOKEN)
+        try:
+            user = await self.validate_token(token)
+            scope["user"]=user
+            return await self.inner(scope, receive, send)
+        except Exception as e:
+            print(e)
+            await send({
+                "type": "websocket.close"
+            })
+            return
 
     
     async def extract_token(self, scope):
@@ -41,8 +52,8 @@ class ChatAuthentication(BaseMiddleware):
         Extract the token from headers
         """
         headers = dict(scope["headers"])
-        token_string = headers.get(b'cookie', b'').decode()
-        token = token_string.split('CHAT-API-TOKEN=')[-1]
+        token_string = parse_qs(headers.get(b'cookie', b'').decode())
+        token = token_string.get("CHAT-API-TOKEN", [None])[0]
         return token
     
     async def validate_token(self, token):
