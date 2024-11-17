@@ -9,6 +9,7 @@ from common.redis_proxy import get_redis_instance
 from django.conf import settings
 from .tasks import save_message_to_group, notify_active_user
 from urllib.parse import parse_qs
+from channels.layers import get_channel_layer
 
 chat_cache = get_redis_instance("CHAT_DB")
 
@@ -18,52 +19,67 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
     model = Message
 
     async def connect(self):
-        self.roomGroupName = "chat_home"
         await self.accept()
-        await self.channel_layer.group_add(self.roomGroupName, self.channel_name)
-
         self.user = self.scope.get("user")
 
         chat_cache.set(self.user.id, self.channel_name)
         
         response_data = {
             "type": "connection_message",
-            "message": f"Connected to group {self.roomGroupName}",
+            "message": "Connected to Channel",
         }
         await self.send(text_data=self.schema.dumps(response_data))
 
     async def disconnect(self):
         chat_cache.delete(self.user.id)
-        await self.channel_layer.group_discard(self.roomGroupName, self.channel_name)
         self.close()
 
     
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         try:
-            data = await sync_to_async(self.schema.loads)(text_data)
+            data = self.schema.loads(text_data)
         except Exception as e:
             await self.disconnect()
             raise BadRequestData(errors=e.messages_dict)
         
-        if not await database_sync_to_async(ChatRoom.objects.filter(id=data["room_id"]).exists)():
+        chat_room = await self.get_chat_room(data["room_id"])
+        if not chat_room:
             await self.disconnect()
             raise BadRequestData(errors="Invalid room id.")
 
         # save message to db
-        save_message_to_group.delay(data["room_id"], data["message"], self.user.id)
+        # save_message_to_group.delay(data["room_id"], data["message"], self.user.id)
 
         # TODO notify offline users
 
-        # notify users active in another group
-        notify_active_user.delay(data["room_id"], data["message"], self.user.id)
+        chat_members = await database_sync_to_async(
+            lambda: list(chat_room.groupmember_set.all().values_list("member", flat=True))
+        )()
+        if self.user.id not in chat_members:
+            await self.disconnect()
+            raise BadRequestData(errors="U are not a member of this group.")
+        try:
+            for member in chat_members:
+                channel_name = chat_cache.get(member, None)
+                if channel_name:
+                    await self.channel_layer.send(channel_name, {
+                        "type": "sendMessage",
+                        "message": data["message"],
+                        "sender": self.user.id,
+                        "room_id": str(data["room_id"]),
+                    })
+        except Exception as e:
+            await self.disconnect()
+            print(e)
 
-        # it will send message to active users who are in group
-        await self.channel_layer.group_send(self.roomGroupName, {
-            "type": "sendMessage",
-            "message": data["message"],
-            "sender": self.user.id,
-            "room_id": data["group_id"],
-        })
+    @database_sync_to_async
+    def get_chat_room(self, id):
+        try:
+            chat_room = ChatRoom.objects.prefetch_related("groupmember_set").get(id=id)
+            return chat_room
+        except Exception as e:
+            return None
+
 
     async def sendMessage(self, event):
         # event["type"] = "message"
