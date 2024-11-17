@@ -30,7 +30,15 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         }
         await self.send(text_data=self.schema.dumps(response_data))
 
-    async def disconnect(self):
+        offline_messages = chat_cache.lget(f"offline_{self.user.id}_messages")
+        if offline_messages:
+            for message in offline_messages:
+                data = json.loads(message.decode())
+                await self.channel_layer.send(self.channel_name, data)
+                chat_cache.ldel(f"offline_{self.user.id}_messages", message, del_from=1)
+
+    async def disconnect(self, code):
+        print(f"Closed with code = {code}")
         chat_cache.delete(self.user.id)
         self.close()
 
@@ -39,37 +47,37 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         try:
             data = self.schema.loads(text_data)
         except Exception as e:
-            await self.disconnect()
+            await self.disconnect(code=402)
             raise BadRequestData(errors=e.messages_dict)
         
         chat_room = await self.get_chat_room(data["room_id"])
         if not chat_room:
-            await self.disconnect()
+            await self.disconnect(code=404)
             raise BadRequestData(errors="Invalid room id.")
 
-        # save message to db
-        # save_message_to_group.delay(data["room_id"], data["message"], self.user.id)
-
-        # TODO notify offline users
+        save_message_to_group.delay(data["room_id"], data["message"], self.user.id)
 
         chat_members = await database_sync_to_async(
             lambda: list(chat_room.groupmember_set.all().values_list("member", flat=True))
         )()
         if self.user.id not in chat_members:
-            await self.disconnect()
+            await self.disconnect(code=403)
             raise BadRequestData(errors="U are not a member of this group.")
         try:
             for member in chat_members:
                 channel_name = chat_cache.get(member, None)
+                data = {
+                    "type": "sendMessage",
+                    "message": data["message"],
+                    "sender": self.user.id,
+                    "room_id": str(data["room_id"]),
+                }
                 if channel_name:
-                    await self.channel_layer.send(channel_name, {
-                        "type": "sendMessage",
-                        "message": data["message"],
-                        "sender": self.user.id,
-                        "room_id": str(data["room_id"]),
-                    })
+                    await self.channel_layer.send(channel_name, data)
+                else:
+                    chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
         except Exception as e:
-            await self.disconnect()
+            await self.disconnect(code=404)
             print(e)
 
     @database_sync_to_async

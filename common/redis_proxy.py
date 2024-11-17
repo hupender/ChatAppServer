@@ -38,16 +38,16 @@ class RedisProxy:
         except redis.RedisError as err:
             raise Exception(str(err))
 
-    def ldel(self, key, value):
+    def ldel(self, key, value, del_from=0):
         try:
-            return self.redis_client.lrem(key, 0, value)
+            return self.redis_client.lrem(key, del_from, value)
         except redis.RedisError as err:
             raise Exception(str(err))
 
-    def get(self, key, default=None):
+    def lget(self, key, default=[]):
         try:
             value = self.redis_client.lrange(key, 0, -1)
-            return value.decode() if value else default
+            return value if value else default
         except redis.RedisError as err:
             raise Exception(str(err))
 
