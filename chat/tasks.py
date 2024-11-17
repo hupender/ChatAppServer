@@ -1,5 +1,5 @@
 from celery.utils.log import get_task_logger
-from chat.models import ChatRoom, GroupMember, Message
+from chat.models import ChatRoom, GroupMember, Message, UserMessage
 from chatApp.celery import app as celery_app
 from django.contrib.auth import get_user_model
 from common.redis_proxy import get_redis_instance
@@ -20,7 +20,8 @@ def save_message_to_group(room_id, message, user_id):
         "sender": user,
         "content": message
     }
-    Message.objects.create(**data)
+    message = Message.objects.create(**data)
+    usermessage = UserMessage.objects.create(message=message, user=user, is_read=True)
     logger.info("Message saved successfully to database.")
 
 @celery_app.task
