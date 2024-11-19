@@ -41,21 +41,29 @@ class MessageSchema(Schema):
     message = fields.String(required=True)
     sender = fields.UUID(dump_only=True)
     message_time = fields.Method("get_message_time")
+    message_date = fields.Method("get_message_date")
     room_id = fields.UUID(required=True)
 
     def get_message_time(self, obj):
-        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return datetime.now().strftime('%H:%M')
+    
+    def get_message_date(self, obj):
+        return datetime.now().strftime('%d-%m-%Y')
 
 class AllMessageSchema(Schema):
     model = Message
     
     message = fields.Function(lambda obj: obj.content)
     sender = fields.Function(lambda obj: obj.sender.id)
-    group_id = fields.Function(lambda obj: obj.room.id)
+    room_id = fields.Function(lambda obj: obj.room.id)
     message_time = fields.Method("get_message_time")
+    message_date = fields.Method("get_message_date")
 
     def get_message_time(self, obj):
-        return obj.update_ts.strftime('%Y-%m-%d %H:%M:%S')
+        return datetime.now().strftime('%H:%M')
+    
+    def get_message_date(self, obj):
+        return datetime.now().strftime('%d-%m-%Y')
 
 class CreateGroupSchema(Schema):
     model = ChatRoom
