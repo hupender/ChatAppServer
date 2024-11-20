@@ -60,10 +60,10 @@ class AllMessageSchema(Schema):
     message_date = fields.Method("get_message_date")
 
     def get_message_time(self, obj):
-        return datetime.now().strftime('%H:%M')
+        return obj.update_ts.strftime('%H:%M')
     
     def get_message_date(self, obj):
-        return datetime.now().strftime('%d-%m-%Y')
+        return obj.update_ts.strftime('%d-%m-%Y')
 
 class CreateGroupSchema(Schema):
     model = ChatRoom
