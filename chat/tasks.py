@@ -11,11 +11,12 @@ chat_cache = get_redis_instance("CHAT_DB")
 logger = get_task_logger(__name__)
 
 @celery_app.task
-def save_message_to_group(room_id, message, user_id):
+def save_message_to_group(msg_id, room_id, message, user_id):
     user_model = get_user_model()
     group = ChatRoom.objects.get(id=room_id)
     user = user_model.objects.get(id=user_id)
     data = {
+        "id": msg_id,
         "room": group,
         "sender": user,
         "content": message

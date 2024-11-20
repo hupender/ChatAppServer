@@ -55,7 +55,9 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             await self.disconnect(code=404)
             raise BadRequestData(errors="Invalid room id.")
 
-        save_message_to_group.delay(data["room_id"], data["message"], self.user.id)
+        room_instance = ChatRoom(id=data["room_id"])
+        message = Message(room=room_instance, sender=self.user, content=data["message"])
+        save_message_to_group.delay(message.id, data["room_id"], data["message"], self.user.id)
 
         chat_members = await database_sync_to_async(
             lambda: list(chat_room.groupmember_set.all().values_list("member", flat=True))
@@ -71,6 +73,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                     "message": data["message"],
                     "sender": self.user.id,
                     "room_id": str(data["room_id"]),
+                    "id": str(message.id)
                 }
                 if channel_name:
                     await self.channel_layer.send(channel_name, data)
@@ -78,7 +81,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                     chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
         except Exception as e:
             await self.disconnect(code=404)
-            print(e)
+            raise BadRequestData(errors=e)
 
     @database_sync_to_async
     def get_chat_room(self, id):

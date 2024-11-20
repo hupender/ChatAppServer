@@ -43,6 +43,7 @@ class MessageSchema(Schema):
     message_time = fields.Method("get_message_time")
     message_date = fields.Method("get_message_date")
     room_id = fields.UUID(required=True)
+    id = fields.UUID()
 
     def get_message_time(self, obj):
         return datetime.now().strftime('%H:%M')
@@ -58,6 +59,7 @@ class AllMessageSchema(Schema):
     room_id = fields.Function(lambda obj: obj.room.id)
     message_time = fields.Method("get_message_time")
     message_date = fields.Method("get_message_date")
+    id = fields.UUID()
 
     def get_message_time(self, obj):
         return obj.update_ts.strftime('%H:%M')
