@@ -37,7 +37,7 @@ class GetAllRoomSchema(Schema):
 class MessageSchema(Schema):
     model = Message
     
-    type = fields.String()
+    type = fields.String(load_default="sendMessage")
     message = fields.String(required=True)
     sender = fields.UUID(dump_only=True)
     message_time = fields.Method("get_message_time")

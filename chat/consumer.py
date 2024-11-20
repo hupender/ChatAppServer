@@ -1,13 +1,13 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 import json
-from common.api_exception import BadRequestData
-from chat.models import ChatRoom, GroupMember, Message
+from common.api_exception import AuthenticationFailed, BadRequestData
+from chat.models import ChatRoom, GroupMember, Message, UserMessage
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from chat.api.schema import GetAllRoomSchema, MessageSchema
 from common.redis_proxy import get_redis_instance
 from django.conf import settings
-from .tasks import save_message_to_group, notify_active_user
+from .tasks import delete_message, edit_message, save_message_to_group, notify_active_user
 from urllib.parse import parse_qs
 from channels.layers import get_channel_layer
 
@@ -48,16 +48,12 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             data = self.schema.loads(text_data)
         except Exception as e:
             await self.disconnect(code=402)
-            raise BadRequestData(errors=e.messages_dict)
+            raise BadRequestData(errors=e)
         
         chat_room = await self.get_chat_room(data["room_id"])
         if not chat_room:
             await self.disconnect(code=404)
             raise BadRequestData(errors="Invalid room id.")
-
-        room_instance = ChatRoom(id=data["room_id"])
-        message = Message(room=room_instance, sender=self.user, content=data["message"])
-        save_message_to_group.delay(message.id, data["room_id"], data["message"], self.user.id)
 
         chat_members = await database_sync_to_async(
             lambda: list(chat_room.groupmember_set.all().values_list("member", flat=True))
@@ -65,20 +61,45 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         if self.user.id not in chat_members:
             await self.disconnect(code=403)
             raise BadRequestData(errors="U are not a member of this group.")
+        
+        if data["type"] == "sendMessage":
+            message = Message(room=chat_room, sender=self.user, content=data["message"])
+            message_id = message.id
+            save_message_to_group.delay(message.id, data["room_id"], data["message"], self.user.id)
+        else:
+            message_id = data["id"]
+            user_message = await self.get_user_message(data["id"], self.user.id)
+            if not user_message:
+                await self.disconnect(code=403)
+                raise AuthenticationFailed(errors="Permisson error")
+        
         try:
             for member in chat_members:
                 channel_name = chat_cache.get(member, None)
                 data = {
-                    "type": "sendMessage",
+                    "type": data["type"],
                     "message": data["message"],
                     "sender": self.user.id,
                     "room_id": str(data["room_id"]),
-                    "id": str(message.id)
+                    "id": str(message_id)
                 }
                 if channel_name:
                     await self.channel_layer.send(channel_name, data)
                 else:
-                    chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
+                    if data["type"] == "deleteMessage":
+                        data["type"] = "sendMessage"
+                        chat_cache.ldel(f"offline_{member}_messages", json.dumps(data))
+                    elif data["type"] == "editMessage":
+                        offline_messages = chat_cache.lget(f"offline_{member}_messages")
+                        if offline_messages:
+                            for i, message in enumerate(offline_messages):
+                                redis_data = json.loads(message.decode())
+                                if data["id"] == redis_data["id"]:
+                                    redis_data["message"] = data["message"]
+                                    chat_cache.lsetindex(f"offline_{member}_messages", json.dumps(redis_data), i, 157680000)
+                                    break
+                    else:
+                        chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
         except Exception as e:
             await self.disconnect(code=404)
             raise BadRequestData(errors=e)
@@ -90,11 +111,27 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             return chat_room
         except Exception as e:
             return None
-
+        
+    @database_sync_to_async
+    def get_user_message(self, message, user):
+        try:
+            return UserMessage.objects.get(message=message, user=user)
+        except Exception as e:
+            return None
 
     async def sendMessage(self, event):
         # event["type"] = "message"
         data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
+    async def editMessage(self, event):
+        data = self.schema.dump(event)
+        edit_message.delay(data["id"], data["message"])
+        await self.send(text_data=self.schema.dumps(data))
+    
+    async def deleteMessage(self, event):
+        data = self.schema.dump(event)
+        delete_message.delay(data["id"])
         await self.send(text_data=self.schema.dumps(data))
 
     async def notify(self, event):

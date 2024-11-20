@@ -39,4 +39,16 @@ def notify_active_user(group_id, message, sender):
                 "sender": sender,
             })
     logger.info("Notified active users")
+
+@celery_app.task
+def edit_message(message_id, content):
+    message = Message.objects.get(id=message_id)
+    message.content = content
+    message.save()
+    logger.info("Message Edited successfully.")
+
+@celery_app.task
+def delete_message(message_id):
+    Message.objects.get(id=message_id).delete()
+    logger.info("Message deleted successfully.")
             
