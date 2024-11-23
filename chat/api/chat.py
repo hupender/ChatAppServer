@@ -107,7 +107,7 @@ class GetGroupMessage(BulkBaseView):
     def get(self, request, group_id, *args, **kwargs):
         user = self.schema.user
 
-        group_message_data = self.model.objects.filter(room=group_id).order_by("update_ts")
+        group_message_data = self.model.objects.filter(room=group_id).order_by("created_ts")
 
         return JsonResponse(
             {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_message_data)), "meta": {}}, status=200
