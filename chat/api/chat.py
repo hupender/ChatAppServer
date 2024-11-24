@@ -1,12 +1,23 @@
+import json
+from django.conf import settings
 from django.http import JsonResponse
+from common.redis_proxy import get_redis_instance
+from common.decorators import json_token_required
 from common.error.exceptions import NOT_FOUND_ERROR
+from django.views.decorators.http import require_http_methods
 from common.helpers import make_response
 from common.views import BaseView, BulkBaseView
 from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAllRoomSchema, FriendSchema, GetFriendRequestSchema, UpdateFriendRequestSchema
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
-from common.api_exception import BadRequestData, NotFound, PermissionDenied
+from common.api_exception import BadRequestData, NotFound, PermissionDenied, api_exception_handler
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When, F, CharField
+from cloudinary.uploader import upload_large
+from chat.utils import magic_number_map
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+chat_cache = get_redis_instance("CHAT_DB")
 
 
 class CreateGroup(BaseView):
@@ -198,3 +209,59 @@ class UpdateFriendRequest(BaseView):
         return JsonResponse(
             make_response(request, "PUT", response_data=self.schema.dump(friend_request), response_text=self.message), status=202
         )
+
+
+@require_http_methods(["POST"])
+@api_exception_handler
+@json_token_required
+def share_files_to_room(request, id, *args, **kwargs):
+        resp_message = "File has been sent successfully."
+        if request.FILES:
+            file = request.FILES.get("file", None)
+            if file:
+                if file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
+                    raise BadRequestData(errors="Max size limit reached")
+                file.seek(0)
+                magic_number = file.read(8).hex().upper()
+                file_type = None
+                for magic, ftype in magic_number_map.items():
+                    if magic_number.startswith(magic):
+                        file_type = ftype
+                        break
+                file.seek(0)
+
+                response = upload_large(file, resource_type="auto", folder="/ChatApp")
+
+                # send message to all users in group
+                try:
+                    group = ChatRoom.objects.prefetch_related("groupmember_set").get(id=id)
+                except Exception as e:
+                    NotFound(errors="Room does not exists.")
+                message = Message.objects.create(
+                    room=group, sender=request.user, content=f"{response['secure_url']}, {file_type}", is_file=True
+                )
+
+                chat_members = list(group.groupmember_set.all().values_list("member", flat=True))
+                channel_layer = get_channel_layer()
+                for member in chat_members:
+                    channel_name = chat_cache.get(member, None)
+                    data = {
+                        "type": "sendFile",
+                        "message": message.content,
+                        "sender": request.user.id,
+                        "room_id": str(id),
+                        "id": str(message.id),
+                        "is_file": True
+                        
+                    }
+                    if channel_name:
+                        async_to_sync(channel_layer.send)(channel_name, data)
+                    else:
+                        chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
+                return JsonResponse(
+                    make_response(request, "POST", response_text=resp_message), status=201
+                )
+            else:
+                raise BadRequestData(errors="Please provide file to be sent.")
+        else:
+            raise BadRequestData(errors="Please provide file to be sent.")

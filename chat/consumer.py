@@ -120,7 +120,10 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             return None
 
     async def sendMessage(self, event):
-        # event["type"] = "message"
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
+    async def sendFile(self, event):
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
 
@@ -135,7 +138,6 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         await self.send(text_data=self.schema.dumps(data))
 
     async def notify(self, event):
-        # event["type"] = "notification"
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
 

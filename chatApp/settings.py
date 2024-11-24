@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -184,5 +186,16 @@ LANGUAGES = (
     ("ori", "Oria"),
     ("ta", "Tamil"),
 )
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY = {
+    'cloud_name': 'dsao9pwrq',
+    'api_key': '527331734284885',
+    'api_secret': 'uyeyRwQwzROgtHrkC6OMM1SK7Ec',
+}
+
 
 from .local_settings import *

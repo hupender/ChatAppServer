@@ -13,6 +13,7 @@ class Message(BaseModel):
     room = models.ForeignKey(ChatRoom, verbose_name=_("name of the room associated"), on_delete=models.CASCADE)
     sender = models.ForeignKey(Users, on_delete=models.CASCADE)
     content = models.TextField(_("content of the message "))
+    is_file = models.BooleanField(_("wheather message is a file"), default=False, blank=True)
 
 
 class UserMessage(BaseModel):

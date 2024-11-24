@@ -8,4 +8,5 @@ urlpatterns = [
     path("add-friend/", chat.AddFriend.as_view(),  name="add_friend"),
     path("get-friend-requests/", chat.GetRequestList.as_view(), name="get_friend_requests"),
     path("update-friend-request/<uuid:id>/", chat.UpdateFriendRequest.as_view(), name="update_friend_request"),
+    path("send-files-to-room/<uuid:id>/", chat.share_files_to_room, name="send_files_to_room"),
 ]
