@@ -60,6 +60,7 @@ class AllMessageSchema(Schema):
     room_id = fields.Function(lambda obj: obj.room.id)
     message_time = fields.Method("get_message_time")
     message_date = fields.Method("get_message_date")
+    is_file = fields.Boolean(dump_default=False, dump_only=True)
     id = fields.UUID()
 
     def get_message_time(self, obj):

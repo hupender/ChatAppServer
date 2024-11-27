@@ -22,7 +22,7 @@ def save_message_to_group(msg_id, room_id, message, user_id):
         "content": message
     }
     message = Message.objects.create(**data)
-    usermessage = UserMessage.objects.create(message=message, user=user, is_read=True)
+    # usermessage = UserMessage.objects.create(message=message, user=user, is_read=True)
     logger.info("Message saved successfully to database.")
 
 @celery_app.task

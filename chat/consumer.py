@@ -115,7 +115,13 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_user_message(self, message, user):
         try:
-            return UserMessage.objects.get(message=message, user=user)
+            message = Message.objects.get(id=message)
+            if message.is_file:
+                return None
+            elif message.sender.id == user:
+                return Message
+            else:
+                return None
         except Exception as e:
             return None
 
