@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from common.redis_proxy import get_redis_instance
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync, sync_to_async
+from cloudinary.uploader import destroy
 
 chat_cache = get_redis_instance("CHAT_DB")
 
@@ -51,4 +52,14 @@ def edit_message(message_id, content):
 def delete_message(message_id):
     Message.objects.get(id=message_id).delete()
     logger.info("Message deleted successfully.")
+
+@celery_app.task
+def delete_from_cloud(message_id):
+    message = Message.objects.get(id=message_id)
+    content = message.content
+    # extract the public id and delete 
+    public_id = "/".join(content.split("/")[-2:]).split(".")[0]
+    destroy(public_id)
+    logger.info("Successfully deleted file from cloud.")
+    
             

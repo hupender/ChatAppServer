@@ -7,7 +7,7 @@ from channels.db import database_sync_to_async
 from chat.api.schema import GetAllRoomSchema, MessageSchema
 from common.redis_proxy import get_redis_instance
 from django.conf import settings
-from .tasks import delete_message, edit_message, save_message_to_group, notify_active_user
+from .tasks import delete_from_cloud, delete_message, edit_message, save_message_to_group, notify_active_user
 from urllib.parse import parse_qs
 from channels.layers import get_channel_layer
 
@@ -72,6 +72,12 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             if not user_message:
                 await self.disconnect(code=403)
                 raise AuthenticationFailed(errors="Permisson error")
+            if data["type"] == "editMessage" and user_message.is_file:
+                await self.disconnect(code=400)
+                raise BadRequestData(errors="Can not edit files.")
+            if data["type"] == "deleteMessage" and user_message.is_file:
+                delete_from_cloud.delay(user_message.id)
+            
         
         try:
             for member in chat_members:
@@ -115,11 +121,9 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def get_user_message(self, message, user):
         try:
-            message = Message.objects.get(id=message)
-            if message.is_file:
-                return None
-            elif message.sender.id == user:
-                return Message
+            user_message = Message.objects.get(id=message)
+            if user_message.sender.id == user:
+                return user_message
             else:
                 return None
         except Exception as e:
