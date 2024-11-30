@@ -62,11 +62,16 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             await self.disconnect(code=403)
             raise BadRequestData(errors="U are not a member of this group.")
         
-        if data["type"] == "sendMessage":
+        if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer":
+            message_id = None
+            if chat_room.is_group:
+                await self.disconnect(code=400)
+                raise BadRequestData(errors="Call only for one to one chat.")
+        elif data["type"] == "sendMessage":
             message = Message(room=chat_room, sender=self.user, content=data["message"])
             message_id = message.id
             save_message_to_group.delay(message.id, data["room_id"], data["message"], self.user.id)
-        else:
+        elif data["type"] == "editMessage" or data["type"] == "deleteMessage":
             message_id = data["id"]
             user_message = await self.get_user_message(data["id"], self.user.id)
             if not user_message:
@@ -103,8 +108,11 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                                     redis_data["message"] = data["message"]
                                     chat_cache.lsetindex(f"offline_{member}_messages", json.dumps(redis_data), i, 157680000)
                                     break
-                    else:
+                    elif data["type"] == "sendMessage" or data["type"] == "sendFile":
                         chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
+                    else:
+                        chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 10)
+
         except Exception as e:
             await self.disconnect(code=404)
             raise BadRequestData(errors=e)
@@ -127,6 +135,18 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                 return None
         except Exception as e:
             return None
+        
+    async def sendIceCandidates(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
+    async def sendOffer(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+    
+    async def sendAnswer(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
 
     async def sendMessage(self, event):
         data = self.schema.dump(event)
