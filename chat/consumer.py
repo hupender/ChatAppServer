@@ -93,7 +93,6 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                     await self.channel_layer.send(channel_name, data)
                 else:
                     if data["type"] == "deleteMessage":
-                        data["type"] = "sendMessage"
                         chat_cache.ldel(f"offline_{member}_messages", json.dumps(data))
                     elif data["type"] == "editMessage":
                         offline_messages = chat_cache.lget(f"offline_{member}_messages")

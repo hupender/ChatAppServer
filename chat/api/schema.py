@@ -44,7 +44,7 @@ class MessageSchema(Schema):
     message_date = fields.Method("get_message_date")
     room_id = fields.UUID(required=True)
     id = fields.UUID()
-    is_file = fields.Boolean(dump_default=False, dump_only=True)
+    is_file = fields.Boolean(dump_default=False)
 
     def get_message_time(self, obj):
         return datetime.now().strftime('%H:%M')
