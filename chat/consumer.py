@@ -62,7 +62,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             await self.disconnect(code=403)
             raise BadRequestData(errors="U are not a member of this group.")
         
-        if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer":
+        if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer" or data["type"] == "sendEndCall":
             message_id = None
             if chat_room.is_group:
                 await self.disconnect(code=400)
@@ -110,8 +110,10 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                                     break
                     elif data["type"] == "sendMessage" or data["type"] == "sendFile":
                         chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
-                    else:
-                        chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 10)
+                    elif data["type"] == "sendOffer":
+                        chat_cache.set(f"incoming_{member}_call", json.dumps(data), 10)
+                    elif data["type"] == "sendEndCall":
+                        chat_cache.delete(f"incoming_{member}_call")
 
         except Exception as e:
             await self.disconnect(code=404)
@@ -135,6 +137,10 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                 return None
         except Exception as e:
             return None
+        
+    async def sendEndCall(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
         
     async def sendIceCandidates(self, event):
         data = self.schema.dump(event)
