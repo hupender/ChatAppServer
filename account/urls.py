@@ -6,6 +6,7 @@ from .api import accounts
 urlpatterns = [
     path("create-user/", auth.create_user, name="create_user"),
     path("user-login/", auth.login, name="login"),
+    path("oauth-login/", auth.oauth_login, name="oauth_login"),
     path("refresh-token/", auth.refresh_token, name="refresh_token"),
     path("change-password/", accounts.ChangePassword.as_view(), name="change_password"),
     path("get-otp/", auth.send_otp, name="send_otp"),

@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from marshmallow import ValidationError
@@ -22,6 +23,8 @@ from common.success.messages import (
 )
 from common.redis_proxy import data_cache, get_redis_instance
 from django.contrib.auth import get_user_model, authenticate
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 
 user_model = get_user_model()
@@ -98,6 +101,53 @@ def login(request):
     )
     response.set_cookie("CHAT-API-TOKEN", result["token"], 86400, httponly=True,secure=True, samesite='None')
     return response
+
+@require_http_methods(["POST"])
+@api_exception_handler
+@validate_json_request
+def oauth_login(request):
+    message = LOGIN_SUCCESSFULL
+    try:
+        res = json.loads(request.body)
+        data = id_token.verify_oauth2_token(res.get("credential"), requests.Request(), settings.GOOGLE_CLIENT_ID)
+    except Exception as e:
+        raise BadRequestData(errors= str(e))
+    try:
+        user = user_model.objects.get(email=data.get("email", None))
+    except:
+        modified_data = {}
+        modified_data["first_name"] = data.get("given_name", None)
+        modified_data["last_name"] = data.get("family_name", None)
+        modified_data["email"] = data.get("email", None)
+        modified_data["password"] = generate_random_string(10)
+        user = user_model.objects.create_user(password=modified_data.pop("password"), **modified_data)
+
+    session_id = generate_random_string(32)
+    session_cache_key = f"user:{user.id}:session"
+    data_cache.set(key=session_cache_key, value=session_id)
+
+    with open(settings.JWT_PRIVATE_KEY) as file:
+        private_key = file.read()
+
+    payload = {
+        "user_id": user.id,
+        "exp": (timezone.now() + timezone.timedelta(seconds=settings.JWT_TOKEN_EXPIRY)),
+        "session_id": session_id
+    }
+
+    token = jwt.encode(payload, private_key, settings.JWT_ALGORITHM)
+    result = {}
+    result["user_id"] = user.id
+    result["token"] = token
+    result["account_number"] = user.account_number
+    
+    response = JsonResponse(
+        {"response": make_response(request, "POST", response_text=message, response_data=result), "meta": {}}, status=200
+    )
+    response.set_cookie("CHAT-API-TOKEN", result["token"], 86400, httponly=True,secure=True, samesite='None')
+    return response
+
+
 
 
 @require_http_methods(["POST"])
