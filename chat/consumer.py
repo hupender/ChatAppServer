@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 import json
+from chat.webrtc import WebRTC
 from common.api_exception import AuthenticationFailed, BadRequestData
 from chat.models import ChatRoom, GroupMember, Message, UserMessage
 from asgiref.sync import async_to_sync, sync_to_async
@@ -10,6 +11,7 @@ from django.conf import settings
 from .tasks import delete_from_cloud, delete_message, edit_message, save_message_to_group, notify_active_user
 from urllib.parse import parse_qs
 from channels.layers import get_channel_layer
+from chat.webrtc import connection_cache
 
 chat_cache = get_redis_instance("CHAT_DB")
 
@@ -61,12 +63,31 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         if self.user.id not in chat_members:
             await self.disconnect(code=403)
             raise BadRequestData(errors="U are not a member of this group.")
-        
-        if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer" or data["type"] == "sendEndCall":
-            message_id = None
-            if chat_room.is_group:
-                await self.disconnect(code=400)
-                raise BadRequestData(errors="Call only for one to one chat.")
+        # flag to decide wheather to run the send or not
+        flag = 1
+        if data["type"] == "sendOffer":
+            flag = 0
+            peerConnection = WebRTC(chat_room.id, self.user.id, chat_members)
+            connection_cache[f"webrtc_{self.user.id}_call"] = peerConnection
+            await peerConnection.handle_offer(data)
+        elif data["type"] == "sendAnswerCall":
+            flag = 0
+            peerConnection = WebRTC(chat_room.id, self.user.id, chat_members)
+            connection_cache[f"webrtc_{self.user.id}_call"] = peerConnection
+            await peerConnection.handle_answer_call(data)
+        elif data["type"] == "sendIceCandidates":
+            flag = 0
+            try:
+                peerConnection = connection_cache[f"webrtc_{self.user.id}_call"]
+                await peerConnection.handle_ice_candidates(data)
+            except:
+                await self.disconnect(400)
+                raise BadRequestData(errors="peer connection not found")
+        # if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer" or data["type"] == "sendEndCall":
+        #     message_id = None
+        #     if chat_room.is_group:
+        #         await self.disconnect(code=400)
+        #         raise BadRequestData(errors="Call only for one to one chat.")
         elif data["type"] == "sendMessage":
             message = Message(room=chat_room, sender=self.user, content=data["message"])
             message_id = message.id
@@ -83,41 +104,41 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             if data["type"] == "deleteMessage" and user_message.is_file:
                 delete_from_cloud.delay(user_message.id)
             
-        
-        try:
-            for member in chat_members:
-                channel_name = chat_cache.get(member, None)
-                data = {
-                    "type": data["type"],
-                    "message": data["message"],
-                    "sender": self.user.id,
-                    "room_id": str(data["room_id"]),
-                    "id": str(message_id)
-                }
-                if channel_name:
-                    await self.channel_layer.send(channel_name, data)
-                else:
-                    if data["type"] == "deleteMessage":
-                        chat_cache.ldel(f"offline_{member}_messages", json.dumps(data))
-                    elif data["type"] == "editMessage":
-                        offline_messages = chat_cache.lget(f"offline_{member}_messages")
-                        if offline_messages:
-                            for i, message in enumerate(offline_messages):
-                                redis_data = json.loads(message.decode())
-                                if data["id"] == redis_data["id"]:
-                                    redis_data["message"] = data["message"]
-                                    chat_cache.lsetindex(f"offline_{member}_messages", json.dumps(redis_data), i, 157680000)
-                                    break
-                    elif data["type"] == "sendMessage" or data["type"] == "sendFile":
-                        chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
-                    elif data["type"] == "sendOffer":
-                        chat_cache.set(f"incoming_{member}_call", json.dumps(data), 10)
-                    elif data["type"] == "sendEndCall":
-                        chat_cache.delete(f"incoming_{member}_call")
+        if flag:
+            try:
+                for member in chat_members:
+                    channel_name = chat_cache.get(member, None)
+                    data = {
+                        "type": data["type"],
+                        "message": data["message"],
+                        "sender": self.user.id,
+                        "room_id": str(data["room_id"]),
+                        "id": str(message_id)
+                    }
+                    if channel_name:
+                        await self.channel_layer.send(channel_name, data)
+                    else:
+                        if data["type"] == "deleteMessage":
+                            chat_cache.ldel(f"offline_{member}_messages", json.dumps(data))
+                        elif data["type"] == "editMessage":
+                            offline_messages = chat_cache.lget(f"offline_{member}_messages")
+                            if offline_messages:
+                                for i, message in enumerate(offline_messages):
+                                    redis_data = json.loads(message.decode())
+                                    if data["id"] == redis_data["id"]:
+                                        redis_data["message"] = data["message"]
+                                        chat_cache.lsetindex(f"offline_{member}_messages", json.dumps(redis_data), i, 157680000)
+                                        break
+                        elif data["type"] == "sendMessage" or data["type"] == "sendFile":
+                            chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
+                        elif data["type"] == "sendOffer":
+                            chat_cache.set(f"incoming_{member}_call", json.dumps(data), 10)
+                        elif data["type"] == "sendEndCall":
+                            chat_cache.delete(f"incoming_{member}_call")
 
-        except Exception as e:
-            await self.disconnect(code=404)
-            raise BadRequestData(errors=e)
+            except Exception as e:
+                await self.disconnect(code=404)
+                raise BadRequestData(errors=e)
 
     @database_sync_to_async
     def get_chat_room(self, id):
@@ -139,6 +160,10 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             return None
         
     async def sendEndCall(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
+    async def sendIncomingCall(self, event):
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
         
