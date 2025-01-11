@@ -83,6 +83,27 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
             except:
                 await self.disconnect(400)
                 raise BadRequestData(errors="peer connection not found")
+        elif data["type"]  == "sendEndCall":
+            flag = 0
+            try:
+                peerConnection = connection_cache.get(f"webrtc_{self.user.id}_call", None)
+                if peerConnection:
+                    await peerConnection.handle_end_call()
+            except:
+                await self.disconnect(400)
+                raise BadRequestData(errors="peer connection not found")
+        
+        elif data["type"] == "sendRenotiationOffer":
+            flag = 0
+            try:
+                peerConnection = connection_cache.get(f"webrtc_{self.user.id}_call", None)
+                if peerConnection:
+                    await peerConnection.handle_renegotiation_offer(data)
+            except Exception as e:
+                await self.disconnect(400)
+                print(e)
+                # raise BadRequestData(errors="peer connection not found")
+
         # if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer" or data["type"] == "sendEndCall":
         #     message_id = None
         #     if chat_room.is_group:
@@ -163,15 +184,19 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
 
+    async def sendRenegotiationAnswer(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
+    async def sendRenegotiationRequest(self, event):
+        data = self.schema.dump(event)
+        await self.send(text_data=self.schema.dumps(data))
+
     async def sendIncomingCall(self, event):
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
         
     async def sendIceCandidates(self, event):
-        data = self.schema.dump(event)
-        await self.send(text_data=self.schema.dumps(data))
-
-    async def sendOffer(self, event):
         data = self.schema.dump(event)
         await self.send(text_data=self.schema.dumps(data))
     

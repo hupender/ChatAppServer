@@ -15,57 +15,18 @@ connection_cache = {}
 active_track_cache = {}
 channel_layer = get_channel_layer()
 
-
-class DummyAudioStreamTrack(MediaStreamTrack):
+class ClonedVideoTrack(MediaStreamTrack):
     """
-    A dummy audio stream track that generates silent audio.
+    A cloned video track that behaves the same way as the original one.
     """
-
-    kind = "audio"
+    def __init__(self, original_track: MediaStreamTrack):
+        super().__init__()  # Initialize the base class
+        self.original_track = original_track
 
     async def recv(self):
-        # Wait for a moment before sending the next audio packet
-        await asyncio.sleep(0.02)  # Simulate 20ms audio packet interval
-        # Generate silent audio packets
-        return await super(DummyAudioStreamTrack, self).recv()
-
-
-class DummyVideoStreamTrack(MediaStreamTrack):
-    """
-    A dummy video stream track that generates a simple synthetic video.
-    """
-
-    kind = "video"
-
-    def __init__(self):
-        super().__init__()
-        self.width = 640
-        self.height = 480
-        self.counter = 0
-
-    async def recv(self):
-        """
-        Generates a synthetic video frame at regular intervals.
-        Uses OpenCV to generate synthetic frames.
-        """
-        await asyncio.sleep(0.033)  # Simulate ~30fps
-        frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
-
-        # Draw simple graphics on the frame to simulate motion
-        cv2.putText(
-            frame,
-            f"Frame {self.counter}",
-            (50, 200),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (255, 255, 255),
-            2,
-        )
-        self.counter += 1
-
-        # Convert frame to bytes for sending over WebRTC
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        return await super(DummyVideoStreamTrack, self).recv()
+        # This method is called to retrieve the next frame.
+        frame = await self.original_track.recv()
+        return frame 
 
 
 class WebRTC:
@@ -74,19 +35,16 @@ class WebRTC:
         self.group = group
         self.group_members = group_members
         self.peerRTC = RTCPeerConnection()
-        # Add dummy audio/video initially to allow connection establishment
-        self.audio_transceiver = self.peerRTC.addTransceiver("audio", direction="sendrecv")
-        self.video_transceiver = self.peerRTC.addTransceiver("video", direction="sendrecv")
-
-        # Replace these with dummy media streams initially
-        # self.audio_transceiver.sender.replaceTrack(DummyAudioStreamTrack())
-        # self.video_transceiver.sender.replaceTrack(DummyVideoStreamTrack())
+        self.count = 0
 
         @self.peerRTC.on("track")
         async def on_track(track: MediaStreamTrack):
-            print(f"Ontrack called for {self.user}")
+            self.count += 1
             # Relay the track to other group members
-            relayed_track = relay.subscribe(track)
+            # relayed_track = relay.subscribe(track)
+            # relayed_track = ClonedVideoTrack(track)
+            relayed_track = track
+
             if self.user in active_track_cache:
                 active_track_cache[self.user][track.kind] = relayed_track
             else:
@@ -94,63 +52,52 @@ class WebRTC:
                     track.kind: relayed_track
                 }
 
-            # for member in self.group_members:
-            #     peer_connection = connection_cache.get(f"webrtc_{member}_call")
-            #     if member != self.user:
-            #         if member in active_track_cache:
-            #             self.audio_transceiver.sender.replaceTrack(active_track_cache[member]["audio"])
-            #             self.audio_transceiver.sender.replaceTrack(active_track_cache[member]["video"])
-
-
-            #         if track.kind == "audio":
-            #             peer_connection.audio_transceiver.sender.replaceTrack(relayed_track)
-            #         if track.kind == "video":
-            #             peer_connection.video_transceiver.sender.replaceTrack(relayed_track)
-
-            # if track.kind == "audio":
-            #     self.audio_transceiver.sender.replaceTrack(relayed_track)
-            # if track.kind == "video":
-            #     self.video_transceiver.sender.replaceTrack(relayed_track)
-
-            # for member in self.group_members:
-            #     if member != self.user:
-            #         peer_connection = connection_cache.get(f"webrtc_{member}_call")
-            #         if peer_connection:
-            #             if track.kind == "audio":
-            #                 peer_connection.audio_transceiver.sender.replaceTrack(relayed_track)
-            #             if track.kind == "video":
-            #                 peer_connection.video_transceiver.sender.replaceTrack(relayed_track)
-            for member_id in self.group_members:
-                if member_id != self.user:
-                    # Fetch connection for the group member
-                    other_peer = connection_cache.get(f"webrtc_{member_id}_call")
-                    if other_peer:
-                        if track.kind == "audio":
-                            print(f"{self.user} releaying media to member {member_id}")
-                            try:
-                                other_peer.audio_transceiver.sender.replaceTrack(relayed_track)
-                            except Exception as e:
-                                print(f"Error relaying audio to {member_id}: {e}")
-                        elif track.kind == "video":
-                            try:
-                                other_peer.video_transceiver.sender.replaceTrack(relayed_track)
-                            except Exception as e:
-                                print(f"Error relaying video to {member_id}: {e}")
-            
             for member in self.group_members:
-                if member != self.user:
-                    active_track = active_track_cache.get(member, None)
-                    if active_track:
-                        self.audio_transceiver.sender.replaceTrack(active_track["audio"])
-                        self.video_transceiver.sender.replaceTrack(active_track["video"])
+                # if member != self.user:
+                    other_peer = connection_cache.get(f"webrtc_{member}_call")
+                    if other_peer:
+                        # send my track to all the currently joined members
+                        try:
+                            other_peer.peerRTC.addTrack(relayed_track)
+                        except Exception as e:
+                            print(track.kind)
+                            print("sending new user data to existing ones")
+                            print(e)
 
+                        # active_track = active_track_cache.get(member, None)
+                        # if active_track:
+                        #     # other users track to myself
+                        #     try:
+                        #         self.peerRTC.addTrack(active_track[track.kind])
+                        #     except Exception as e:
+                        #         print("sending old users track to current")
+                        #         print(track.kind)
+                        #         print(e)
 
-                    # else:
-                    #     print(f"{self.user} releaying media to member {self.user}")
-                    #     if track.kind == "audio":
-                    #         self.audio_transceiver.sender.replaceTrack(relayed_track)
-                    #     if track.kind == "video":
-                    #         self.video_transceiver.sender.replaceTrack(relayed_track)
+            # if self.count == 2:
+            #     self.count = 0
+            #     await self.handle_renegotiation()
+
+        @self.peerRTC.on("iceconnectionstatechange")
+        async def on_ice_change():
+            # print(self.peerRTC.iceConnectionState)
+            pass
+
+        @self.peerRTC.on("connectionstatechange")
+        async def on_conection_state_change():
+            pass
+            # if self.peerRTC.connectionState == "connected":
+            #     # ask user to do renegotiation
+            #     data = {
+            #         "type": "sendRenegotiationRequest",
+            #         "message": "Initiate renegotiation",
+            #         "sender": "550e8400-e29b-41d4-a716-446655440000",
+            #         "room_id": self.group,
+            #         "id": None
+            #     }
+            #     channel_name = chat_cache.get(self.user, None)
+            #     await channel_layer.send(channel_name, data)
+
 
         @self.peerRTC.on("icecandidate")
         async def on_ice_candidate(candidate):
@@ -169,6 +116,24 @@ class WebRTC:
             channel_name = chat_cache.get(self.user, None)
             if channel_name:
                 await channel_layer.send(channel_name, data)
+
+    async def handle_renegotiation(self):
+        for member in self.group_members:
+            other_peer = connection_cache.get(f"webrtc_{member}_call")
+            if (other_peer and member != self.user):
+                # or (member == self.user and self.peerRTC.connectionState == "connected"):
+                # ask user to do renegotiation
+                data = {
+                    "type": "sendRenegotiationRequest",
+                    "message": "Initiate renegotiation",
+                    "sender": "550e8400-e29b-41d4-a716-446655440000",
+                    "room_id": self.group,
+                    "id": None
+                }
+                channel_name = chat_cache.get(member, None)
+                if channel_name:
+                    await channel_layer.send(channel_name, data)
+
 
     async def handle_ice_candidates(self, data):
         candidate = json.loads(data["message"])
@@ -210,6 +175,36 @@ class WebRTC:
         channel_name = chat_cache.get(self.user, None)
         await channel_layer.send(channel_name, data)
 
+    async def handle_renegotiation_offer(self, data):
+        offer = json.loads(data["message"])
+
+        # handle offer
+        remote_description = RTCSessionDescription(sdp=offer.get("sdp"), type=offer.get("type"))
+        await self.peerRTC.setRemoteDescription(remote_description)
+        answer = await self.peerRTC.createAnswer()
+        await self.peerRTC.setLocalDescription(RTCSessionDescription(sdp=answer.sdp, type=answer.type))
+        
+        # send answer to the initiator
+        answer = {
+            "sdp": answer.sdp,
+            "type": answer.type
+        }
+
+        data = {
+            "type": "sendRenegotiationAnswer",
+            "message": json.dumps(answer),
+            "sender": "550e8400-e29b-41d4-a716-446655440000",
+            "room_id": self.group,
+            "id": None
+        }
+        channel_name = chat_cache.get(self.user, None)
+        if channel_name:
+            try:
+                await channel_layer.send(channel_name, data)
+            except Exception as e:
+                print("issue here")
+                print(channel_name)
+
     async def handle_offer(self, data):
         offer = json.loads(data["message"])
 
@@ -249,3 +244,16 @@ class WebRTC:
                 }
                 await channel_layer.send(channel_name, data)
  
+    async def handle_end_call(self):
+        connection_cache.pop(f"webrtc_{self.user}_call", None)
+        active_track_cache.pop(self.user, None)
+        
+        for transceiver in self.peerRTC.getTransceivers():
+            if transceiver.sender.track:
+                transceiver.sender.track.stop()
+            if transceiver.receiver.track:
+                transceiver.receiver.stop()
+
+            transceiver = None
+        
+        self.peerRTC.close()
