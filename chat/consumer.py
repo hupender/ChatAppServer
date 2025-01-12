@@ -30,6 +30,11 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         }
         await self.send(text_data=self.schema.dumps(response_data))
 
+        incoming_call = chat_cache.get(f"incoming_{self.user.id}_call")
+        if incoming_call:
+            data = json.loads(incoming_call)
+            await self.channel_layer.send(self.channel_name, data)
+
         offline_messages = chat_cache.lget(f"offline_{self.user.id}_messages")
         if offline_messages:
             for message in offline_messages:
@@ -64,9 +69,6 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
         
         if data["type"] == "sendIceCandidates" or data["type"] == "sendOffer" or data["type"] == "sendAnswer" or data["type"] == "sendEndCall":
             message_id = None
-            if chat_room.is_group:
-                await self.disconnect(code=400)
-                raise BadRequestData(errors="Call only for one to one chat.")
         elif data["type"] == "sendMessage":
             message = Message(room=chat_room, sender=self.user, content=data["message"])
             message_id = message.id
@@ -111,7 +113,7 @@ class AppConsumer(AsyncJsonWebsocketConsumer):
                     elif data["type"] == "sendMessage" or data["type"] == "sendFile":
                         chat_cache.lset(f"offline_{member}_messages", json.dumps(data), 157680000)
                     elif data["type"] == "sendOffer":
-                        chat_cache.set(f"incoming_{member}_call", json.dumps(data), 10)
+                        chat_cache.set(f"incoming_{member}_call", json.dumps(data), 30)
                     elif data["type"] == "sendEndCall":
                         chat_cache.delete(f"incoming_{member}_call")
 

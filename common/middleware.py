@@ -40,7 +40,7 @@ class ChatAuthentication(BaseMiddleware):
             scope["user"]=user
             return await self.inner(scope, receive, send)
         except Exception as e:
-            print(e)
+            print(e.__dict__)
             await send({
                 "type": "websocket.close"
             })
