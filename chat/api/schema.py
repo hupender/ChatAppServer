@@ -26,10 +26,11 @@ class GetAllRoomSchema(Schema):
 
     display_name = fields.String(required=False)
     # has_chat will filter out 1-1 chat with no messages
-    has_chat = fields.Boolean(required=False, load_only=True, default=False)
+    has_chat = fields.Boolean(required=False, load_only=True, missing=False)
 
     last_update = fields.Method("get_update_time")
     group_id = fields.Function(lambda obj: obj.group.id)
+    is_group = fields.Function(lambda obj:obj.group.is_group)
 
     def get_update_time(self, obj):
         return obj.group.update_ts.strftime('%Y-%m-%d %H:%M:%S')

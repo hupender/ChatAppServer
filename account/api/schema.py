@@ -11,6 +11,7 @@ from common.error.schema import (
     INVALID_TOKEN,
     MOBILE_NUMBER_EXISTS,
     INVALID_EMAIL_ID,
+    NAME_REQUIRED,
     PASSWORD_MIN_LENGTH,
 )
 from account.helpers import clean_mobile_number
@@ -143,7 +144,7 @@ class DeleteUserSchema(Schema):
 class SearchUserSchema(Schema):
     model = user_model
 
-    username = fields.String(required=True, data_key="name")
+    username = fields.String(required=True, data_key="name", validate=validate.Length(min=1, error=NAME_REQUIRED))
     quick_search = fields.Boolean(load_only=True, default=False) # if true match the exact string
     is_friend = fields.Boolean(load_only=True)
     sortby = fields.String(load_only=True)

@@ -105,34 +105,28 @@ class SearchAccount(BaseView):
     schema = SearchUserSchema
     http_method_names = ["get"]
     message = "Searched users successfully."
+    custom_filters = {
+        "is_friend": "filtering_is_friend",
+    }
+
+    def filtering_is_friend(self, value):
+        user_friends = UserFriends.objects.filter((Q(user=self.schema.user) | Q(friend=self.schema.user)), status="approved").values_list("user", "friend")
+        friends = set()
+        for pair in user_friends:
+            friends.add(pair[0])
+            friends.add(pair[1])
+        if value:
+            self.queryset = self.queryset.filter(id__in=friends)
+        else:
+            self.queryset = self.queryset.exclude(id__in=friends)
 
     def get(self, request, *args, **kwargs):
-        try:
-            data = self.schema.load(request.GET)
-        except Exception as e:
-            raise BadRequestData(errors=str(e))
-        
-        user = self.schema.user
-        
-        qset = self.model.objects.exclude(id=user.id)
-        # import pdb;pdb.set_trace()
-        if "is_friend" in data:
-            user_friends = UserFriends.objects.filter((Q(user=user) | Q(friend=user)), status="approved").values_list("user", "friend")
-            friends = set()
-            for pair in user_friends:
-                friends.add(pair[0])
-                friends.add(pair[1])
-            if data.get("is_friend"):
-                qset = qset.filter(id__in=friends)
-            else:
-                qset = qset.exclude(id__in=friends)
-
-        if data.get("quick_search"):
-            qset = qset.filter(username=data["username"])
+        self.queryset = self.model.objects.exclude(id=self.schema.user.id)
+        # HACK figure out a better way
+        quick_search = bool(request.GET.get("quick_search"))
+        username = request.GET.get("name")
+        if quick_search:
+            qset = qset.filter(username=username)
         else:
-            qset = qset.filter(username__icontains=data["username"])
-        
-        if not "is_friend" in data and not data.get("username"):
-            qset = qset.none()
-        
-        return JsonResponse(make_response(request, "GET", response_data=self.schema.dump(qset, many=True), response_text=self.message), status=200)
+            qset = qset.filter(username__icontains=username)
+        return super().get(request, *args, **kwargs)

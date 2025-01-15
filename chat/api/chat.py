@@ -11,7 +11,7 @@ from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAl
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
 from common.api_exception import BadRequestData, NotFound, PermissionDenied, api_exception_handler
 from django.contrib.auth import get_user_model
-from django.db.models import Case, When, F, CharField
+from django.db.models import Case, When, F, CharField, Subquery, OuterRef, IntegerField, Count, Value
 from cloudinary.uploader import upload_large
 from chat.utils import magic_number_map
 from channels.layers import get_channel_layer
@@ -79,14 +79,34 @@ class GetUserGroups(BaseView):
     schema = GetAllRoomSchema
     model = GroupMember
     http_method_names = ["get"]
+    custom_filters = {
+        "display_name": "filtering_display_name",
+        "has_chat": "filtering_has_chat",
+    }
+
+    def filtering_display_name(self, value):
+        self.queryset = self.queryset.filter(display_name__icontains=value)
+
+    def filtering_has_chat(self, value):
+        """
+        filteing either a group or has   messges in chat
+        """
+        message_count = Message.objects.filter(room=OuterRef("group")).annotate(count=Count("id")).values("count")[:1]
+
+        self.queryset = self.queryset.annotate(message_count=Case(
+            When(group__is_group=True, then=Value(1)),
+            When(group__is_group=False, then=Subquery(message_count)),
+            default=Value(0),
+            output_field=IntegerField()
+        ))
+
+        if value:
+            self.queryset = self.queryset.exclude(message_count=0)
+        else:
+            self.queryset = self.queryset.filter(message_count=0)
 
     def get(self, request, *args, **kwargs):
-        user = self.schema.user
-        try:
-            data = self.schema.load(request.GET)
-        except Exception as e:
-            raise BadRequestData(errors=e.messages_dict)
-        group_data = self.model.objects.filter(member=user.id).annotate(
+        self.queryset = self.model.objects.filter(member=self.schema.user).annotate(
             display_name = Case(
                 When(group__is_group=True, then=F("group__name")),
                 When(group__is_group=False, then=F("member__username")),
@@ -94,18 +114,9 @@ class GetUserGroups(BaseView):
             )
         ).select_related("group")
 
-        if data.get("display_name", None):
-            group_data = group_data.filter(display_name__icontains=data["display_name"])
-
-        if data.get("has_chat", None):
-            messages_group = set(Message.objects.all().values_list("room", flat=True))
-            group_data = [group for group in group_data if not(group.group.is_group == False and group.group.id not in messages_group)]
-
-        return JsonResponse(
-            {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_data, many=True)), "meta": {}}, status=200
-        )
+        return super(GetUserGroups, self).get(request, *args, **kwargs)
         
-class GetGroupMessage(BulkBaseView):
+class GetGroupMessage(BaseView):
     """
     This api can be uesd to get all message for a chat
     """
@@ -116,13 +127,8 @@ class GetGroupMessage(BulkBaseView):
     http_method_names = ["get"]
 
     def get(self, request, group_id, *args, **kwargs):
-        user = self.schema.user
-
-        group_message_data = self.model.objects.filter(room=group_id).order_by("created_ts")
-
-        return JsonResponse(
-            {"response": make_response(request, "GET", response_text=self.message, response_data=self.schema.dump(group_message_data)), "meta": {}}, status=200
-        )
+        self.queryset = self.model.objects.filter(room=group_id).order_by("created_ts")
+        return super(GetGroupMessage, self).get(request, *args, **kwargs)
 
 class AddFriend(BaseView):
     """
@@ -165,15 +171,11 @@ class GetRequestList(BaseView):
     message = "Fetched friend requests successfully."
 
     def get(self, request, *args, **kwargs):
-        user = self.schema.user
-        
-        queryset = self.model.objects.filter(
-            friend=user, friend__is_active=True, status="pending"
+        self.queryset = self.model.objects.filter(
+            friend=self.schema.user, friend__is_active=True, status="pending"
         ).select_related("user", "friend")
 
-        return JsonResponse(
-            make_response(request, "GET", response_data=self.schema.dump(queryset, many=True), response_text=self.message), status=200
-        )
+        return super(GetRequestList, self).get(request, *args, **kwargs)
     
 class UpdateFriendRequest(BaseView):
     model = UserFriends
