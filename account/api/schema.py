@@ -1,4 +1,5 @@
-from marshmallow import Schema, ValidationError, fields, validate, validates, post_load
+from marshmallow import ValidationError, fields, validate, validates, post_load
+from common.schema import ModelSchema
 from chat.models import UserFriends
 from account.models import Users
 from django.core.validators import validate_email
@@ -21,7 +22,7 @@ from django.db.models import Q
 
 user_model = get_user_model()
 
-class UserSchema(Schema):
+class UserSchema(ModelSchema):
     model = user_model
 
     first_name = fields.String(required=True, validate=validate.Length(max=60, error=INVALID_FIRST_NAME))
@@ -58,14 +59,14 @@ class UserSchema(Schema):
         return data
 
 
-class LoginSchema(Schema):
+class LoginSchema(ModelSchema):
     model = user_model
 
     username = fields.String(required=True)
     password = fields.String(required=True)
     login_with_otp = fields.Boolean(required=False)
 
-class ChangePasswordSchema(Schema):
+class ChangePasswordSchema(ModelSchema):
     model = user_model
 
     old_password = fields.String(required=True, load_only=True, validate=validate.Length(min=6, error=PASSWORD_MIN_LENGTH))
@@ -77,7 +78,7 @@ class ChangePasswordSchema(Schema):
     #     return validate_password(value)
 
 
-class OtpSchema(Schema):
+class OtpSchema(ModelSchema):
     model = user_model
 
     username = fields.String(required=True)
@@ -94,7 +95,7 @@ class PasswordChangeOtpSchema(OtpSchema):
     token = fields.String(required=True, validate=validate.Length(min=6, error=INVALID_TOKEN))
 
 
-class UpdateUserSchema(Schema):
+class UpdateUserSchema(ModelSchema):
     model = user_model
 
     first_name = fields.String(required=False, validate=validate.Length(max=60, error=INVALID_FIRST_NAME))
@@ -129,7 +130,7 @@ class UpdateUserSchema(Schema):
                 raise ValidationError(MOBILE_NUMBER_EXISTS)
         return data
     
-class GetUserDetailsSchema(Schema):
+class GetUserDetailsSchema(ModelSchema):
     model = user_model
 
     id = fields.UUID(dump_only=True)
@@ -138,10 +139,10 @@ class GetUserDetailsSchema(Schema):
     email = fields.Email(dump_only=True)
     mobile_number = fields.String(dump_only=True)
 
-class DeleteUserSchema(Schema):
+class DeleteUserSchema(ModelSchema):
     model = user_model
 
-class SearchUserSchema(Schema):
+class SearchUserSchema(ModelSchema):
     model = user_model
 
     username = fields.String(required=True, data_key="name", validate=validate.Length(min=1, error=NAME_REQUIRED))

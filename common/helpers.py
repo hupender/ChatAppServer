@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from django.utils.translation import gettext as _
 import random
 import re
-def make_response(request, response_type, response_text, response_data=None):
+def make_response(request, response_type, response_text, response_data=None, meta={}):
     """
     build response in proper format so maintain uniformity in whole code
     """
@@ -18,6 +18,7 @@ def make_response(request, response_type, response_text, response_data=None):
     result["message"] = _(response_text)
 
     result["payload"] = response_data
+    result["meta"] = meta
     
     return result
 

@@ -1,4 +1,5 @@
-from marshmallow import Schema, ValidationError, fields, validate, validates, post_load, validates_schema
+from marshmallow import ValidationError, fields, validate, validates, post_load, validates_schema
+from common.schema import ModelSchema
 from account.models import Users
 from django.core.validators import validate_email
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
@@ -21,7 +22,7 @@ from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async, async_to_sync
 
 
-class GetAllRoomSchema(Schema):
+class GetAllRoomSchema(ModelSchema):
     model = GroupMember
 
     display_name = fields.String(required=False)
@@ -35,7 +36,7 @@ class GetAllRoomSchema(Schema):
     def get_update_time(self, obj):
         return obj.group.update_ts.strftime('%Y-%m-%d %H:%M:%S')
 
-class MessageSchema(Schema):
+class MessageSchema(ModelSchema):
     model = Message
     
     type = fields.String(load_default="sendMessage")
@@ -53,7 +54,7 @@ class MessageSchema(Schema):
     def get_message_date(self, obj):
         return datetime.now().strftime('%d-%m-%Y')
 
-class AllMessageSchema(Schema):
+class AllMessageSchema(ModelSchema):
     model = Message
     
     message = fields.Function(lambda obj: obj.content)
@@ -70,7 +71,7 @@ class AllMessageSchema(Schema):
     def get_message_date(self, obj):
         return obj.update_ts.strftime('%d-%m-%Y')
 
-class CreateGroupSchema(Schema):
+class CreateGroupSchema(ModelSchema):
     model = ChatRoom
 
     group_name = fields.String(load_only=True)
@@ -86,7 +87,7 @@ class CreateGroupSchema(Schema):
         self.users.append(self.user)
         
 
-class AddToGroupSchema(Schema):
+class AddToGroupSchema(ModelSchema):
     model = GroupMember
 
     group = fields.UUID(required=True, data_key="group_id")
@@ -113,7 +114,7 @@ class AddToGroupSchema(Schema):
             data = [{"member": user, "group": chat_set[0]} for user in qset]
         return data
 
-class FriendSchema(Schema):
+class FriendSchema(ModelSchema):
     model = UserFriends
     user_model = get_user_model()
 
@@ -142,7 +143,7 @@ class FriendSchema(Schema):
 
         return data
         
-class GetFriendRequestSchema(Schema):
+class GetFriendRequestSchema(ModelSchema):
     model = UserFriends
 
     id = fields.String(dump_only=True)
