@@ -30,7 +30,7 @@ class BaseView(View):
         try:
             data = self.schema.load(request.GET)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
         
         if not hasattr(self, "queryset"):
             self.queryset = self.model.objects.all()

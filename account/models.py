@@ -76,7 +76,7 @@ class Users(BaseModel, AbstractUser):
         },
     )
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
-    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    last_name = models.CharField(_("last name"), max_length=150, blank=True, null=True)
     email = models.EmailField(_("email address"), blank=True, unique=True)
     mobile_number = models.CharField(_("mobile number"), blank=True, max_length=15, validators=[clean_mobile_number], unique=True)
     is_staff = models.BooleanField(
@@ -109,4 +109,4 @@ class Users(BaseModel, AbstractUser):
 
     @classmethod
     def get_full_name(cls, obj):
-        return obj.first_name + " " + obj.last_name
+        return obj.first_name or "" + " " + obj.last_name or ""

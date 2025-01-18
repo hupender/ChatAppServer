@@ -126,7 +126,7 @@ class SearchAccount(BaseView):
         quick_search = bool(request.GET.get("quick_search"))
         username = request.GET.get("name")
         if quick_search:
-            qset = qset.filter(username=username)
+            self.queryset = self.queryset.filter(username=username)
         else:
-            qset = qset.filter(username__icontains=username)
+            self.queryset = self.queryset.filter(username__icontains=username)
         return super().get(request, *args, **kwargs)

@@ -120,6 +120,13 @@ def oauth_login(request):
         modified_data["first_name"] = data.get("given_name", None)
         modified_data["last_name"] = data.get("family_name", None)
         modified_data["email"] = data.get("email", None)
+        username = ""
+        if data.get("given_name", None):
+            username = username + data.get("given_name", None)
+        if data.get("family_name", None):
+            username = username + "_" + data.get("family_name", None)
+        username = username + "_" + str(create_random_number(4))
+        modified_data["username"] = username
         modified_data["password"] = generate_random_string(10)
         # TODO generate a sudo random username usng first name and last name
         user = user_model.objects.create_user(password=modified_data.pop("password"), **modified_data)
@@ -132,7 +139,7 @@ def oauth_login(request):
         private_key = file.read()
 
     payload = {
-        "user_id": user.id,
+        "user_id": str(user.id),
         "exp": (timezone.now() + timezone.timedelta(seconds=settings.JWT_TOKEN_EXPIRY)),
         "session_id": session_id
     }

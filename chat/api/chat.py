@@ -11,7 +11,7 @@ from .schema import AddToGroupSchema, AllMessageSchema, CreateGroupSchema, GetAl
 from chat.models import ChatRoom, GroupMember, Message, UserFriends
 from common.api_exception import BadRequestData, NotFound, PermissionDenied, api_exception_handler
 from django.contrib.auth import get_user_model
-from django.db.models import Case, When, F, CharField, Subquery, OuterRef, IntegerField, Count, Value
+from django.db.models import Case, When, F, CharField, Subquery, OuterRef, IntegerField, Count, Value, Q
 from cloudinary.uploader import upload_large
 from chat.utils import magic_number_map
 from channels.layers import get_channel_layer
@@ -103,7 +103,7 @@ class GetUserGroups(BaseView):
         if value:
             self.queryset = self.queryset.exclude(message_count=0)
         else:
-            self.queryset = self.queryset.filter(message_count=0)
+            self.queryset = self.queryset.filter(Q(message_count=None) | Q(message_count=0))
 
     def get(self, request, *args, **kwargs):
         self.queryset = self.model.objects.filter(member=self.schema.user).annotate(

@@ -144,6 +144,7 @@ class GetUserDetailsSchema(ModelSchema):
     last_name = fields.String(dump_only=True)
     email = fields.Email(dump_only=True)
     mobile_number = fields.String(dump_only=True)
+    username = fields.Str(dump_only=True)
 
 class DeleteUserSchema(ModelSchema):
     model = user_model
@@ -151,7 +152,7 @@ class DeleteUserSchema(ModelSchema):
 class SearchUserSchema(ModelSchema):
     model = user_model
 
-    username = fields.String(required=True, data_key="name", validate=validate.Length(min=1, error=NAME_REQUIRED))
+    username = fields.String(required=False, data_key="name")
     quick_search = fields.Boolean(load_only=True, default=False) # if true match the exact string
     is_friend = fields.Boolean(load_only=True)
     sortby = fields.String(load_only=True)

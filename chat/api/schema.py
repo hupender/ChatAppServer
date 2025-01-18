@@ -27,7 +27,7 @@ class GetAllRoomSchema(ModelSchema):
 
     display_name = fields.String(required=False)
     # has_chat will filter out 1-1 chat with no messages
-    has_chat = fields.Boolean(required=False, load_only=True, missing=False)
+    has_chat = fields.Boolean(required=False, load_only=True)
 
     last_update = fields.Method("get_update_time")
     group_id = fields.Function(lambda obj: obj.group.id)
