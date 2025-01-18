@@ -8,7 +8,7 @@ from django.utils import timezone
 from common.decorators import validate_json_request, json_token_required
 from account.api.schema import PasswordChangeOtpSchema, UserSchema, LoginSchema, OtpSchema, ValidateOtpSchema
 from common.api_exception import api_exception_handler, BadRequestData
-from common.error.exceptions import INVALID_TOKEN, USER_NOT_FOUND, EMAIL_MOBILE_NOT_VERIFIED, EMAIL_MOBILE_NOT_EXIST
+from common.error.exceptions import INVALID_TOKEN, USER_NOT_FOUND, EMAIL_MOBILE_NOT_VERIFIED, EMAIL_MOBILE_NOT_EXIST, USERNAME_PASSWORD_INCORRECT
 from common.error.schema import INVALID_OTP
 from common.helpers import make_response, generate_random_string, create_random_number
 from account.helpers import get_user
@@ -43,7 +43,7 @@ def create_user(request):
     try:
         data = schema.loads(request.body)
     except ValidationError as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.messages_dict)
     
     user = user_model.objects.create_user(password=data.pop("password"), **data)
 
@@ -70,12 +70,12 @@ def login(request):
     try:
         data = schema.loads(request.body)
     except ValidationError as e:
-        raise BadRequestData(errors= str(e))
+        raise BadRequestData(errors=e.messages_dict)
     
     try:
         user = authenticate(request, username=data["username"], password=data["password"])
-    except ValueError as e:
-        raise BadRequestData(errors= str(e))
+    except Exception as e:
+        raise BadRequestData(errors=USERNAME_PASSWORD_INCORRECT)
     
     session_id = generate_random_string(32)
     session_cache_key = f"user:{user.id}:session"
@@ -111,7 +111,8 @@ def oauth_login(request):
         res = json.loads(request.body)
         data = id_token.verify_oauth2_token(res.get("credential"), requests.Request(), settings.GOOGLE_CLIENT_ID)
     except Exception as e:
-        raise BadRequestData(errors= str(e))
+        # TODO better error handling
+        raise BadRequestData(errors=str(e))
     try:
         user = user_model.objects.get(email=data.get("email", None))
     except:
@@ -120,6 +121,7 @@ def oauth_login(request):
         modified_data["last_name"] = data.get("family_name", None)
         modified_data["email"] = data.get("email", None)
         modified_data["password"] = generate_random_string(10)
+        # TODO generate a sudo random username usng first name and last name
         user = user_model.objects.create_user(password=modified_data.pop("password"), **modified_data)
 
     session_id = generate_random_string(32)
@@ -214,7 +216,7 @@ def send_otp(request):
     try:
         data = schema.loads(request.body)
     except Exception as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.messages_dict)
     
     user = get_user(data["username"])
 
@@ -222,9 +224,9 @@ def send_otp(request):
         raise BadRequestData(errors=USER_NOT_FOUND)
     
     if not (user.email or user.mobile_number):
-        raise EMAIL_MOBILE_NOT_EXIST
+        raise BadRequestData(EMAIL_MOBILE_NOT_EXIST)
     if not (user.email_verified or user.mobile_verified):
-        raise EMAIL_MOBILE_NOT_VERIFIED
+        raise BadRequestData(EMAIL_MOBILE_NOT_VERIFIED)
     
 
     otp = create_random_number()
@@ -252,12 +254,12 @@ def validate_otp(request):
     try:
         data = schema.loads(request.body)
     except Exception as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.messages_dict)
     
     try:
         user = get_user(data["username"])
     except Exception as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.errors)
     
     
     session_key = f"user:{user.id}:otp"
@@ -288,12 +290,12 @@ def change_password(request):
     try:
         data = schema.loads(request.body)
     except Exception as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.messages_dict)
     
     try:
         user = get_user(data["username"])
     except Exception as e:
-        raise BadRequestData(errors=str(e))
+        raise BadRequestData(errors=e.errors)
     
     token_key = f"user:{user.id}:token"
     if not (otp_cache.get(token_key) == data["token"]):

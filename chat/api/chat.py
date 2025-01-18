@@ -62,7 +62,7 @@ class AddToGroup(BulkBaseView):
         try:
             data = self.schema.loads(request.body)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
 
         res = self.model.objects.bulk_create([self.model(**d) for d in data])
 

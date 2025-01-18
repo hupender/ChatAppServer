@@ -25,25 +25,31 @@ user_model = get_user_model()
 class UserSchema(ModelSchema):
     model = user_model
 
+    username = fields.String(required=True)
     first_name = fields.String(required=True, validate=validate.Length(max=60, error=INVALID_FIRST_NAME))
     last_name = fields.String(required=False, validate=validate.Length(max=60, error=INVALID_LAST_NAME))
     email = fields.Email(required=True)
     mobile_number = fields.String(required=False)
     password = fields.String(required=True, validate=validate.Length(min=6), load_only=True)
 
+    @validates("username")
+    def check_username_exists(self, value):
+        if self.model.objects.filter(username=value).exists():
+            raise ValidationError("Username already exists.", "mohan")
+
     @validates("mobile_number")
     def validate_mobile_number(self, value):
         try:
             clean_mobile_number(value)
         except:
-            raise ValidationError(INVALID_MOBILE_NUMBER)
+            raise ValidationError(INVALID_MOBILE_NUMBER, "mobile_number")
         
     @validates("email")
     def validate_email(self, value):
         try:
             validate_email(value)
         except:
-            ValidationError(INVALID_EMAIL_ID)
+            ValidationError(INVALID_EMAIL_ID, "email")
         
     @post_load
     def validates_fields(self, data, many=False, partial=False):
@@ -52,10 +58,10 @@ class UserSchema(ModelSchema):
         queryset = self.model.objects.filter()
         if email:
             if queryset.filter(email=email, is_active=True).exists():
-                raise ValidationError(EMAIL_ALREADY_EXISTS)
+                raise ValidationError(EMAIL_ALREADY_EXISTS, "email")
         if mobile_number:
             if queryset.filter(mobile_number=mobile_number, is_active=True).exists():
-                raise ValidationError(MOBILE_NUMBER_EXISTS)
+                raise ValidationError(MOBILE_NUMBER_EXISTS, "email")
         return data
 
 
@@ -108,14 +114,14 @@ class UpdateUserSchema(ModelSchema):
         try:
             clean_mobile_number(value)
         except:
-            raise ValidationError(INVALID_MOBILE_NUMBER)
+            raise ValidationError(INVALID_MOBILE_NUMBER, "mobile_number")
         
     @validates("email")
     def validate_email(self, value):
         try:
             validate_email(value)
         except:
-            ValidationError(INVALID_EMAIL_ID)
+            ValidationError(INVALID_EMAIL_ID, "email")
         
     @post_load
     def validates_fields(self, data, many=False, partial=False):
@@ -124,10 +130,10 @@ class UpdateUserSchema(ModelSchema):
         queryset = self.model.objects.filter()
         if email:
             if queryset.filter(email=email, is_active=True).exists():
-                raise ValidationError(EMAIL_ALREADY_EXISTS)
+                raise ValidationError(EMAIL_ALREADY_EXISTS, "email")
         if mobile_number:
             if queryset.filter(mobile_number=mobile_number, is_active=True).exists():
-                raise ValidationError(MOBILE_NUMBER_EXISTS)
+                raise ValidationError(MOBILE_NUMBER_EXISTS, "mobile_number")
         return data
     
 class GetUserDetailsSchema(ModelSchema):

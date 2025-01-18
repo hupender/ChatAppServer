@@ -48,8 +48,8 @@ def get_user(username):
         raise BadRequestData(errors=USER_NOT_FOUND)
     
     if not (user.email or user.mobile_number):
-        raise EMAIL_MOBILE_NOT_EXIST
+        raise BadRequestData(EMAIL_MOBILE_NOT_EXIST)
     if not (user.email_verified or user.mobile_verified):
-        raise EMAIL_MOBILE_NOT_VERIFIED
+        raise BadRequestData(EMAIL_MOBILE_NOT_VERIFIED)
     
     return user

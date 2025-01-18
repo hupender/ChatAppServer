@@ -83,7 +83,7 @@ class CreateGroupSchema(ModelSchema):
         if len(self.users) != len(value):
             raise ValidationError("Please enter unique user id's", "group_members")
         if len(self.users)<1:
-            raise ValidationError("Atleast 1 other member should be added in the group")
+            raise ValidationError("Atleast 1 other member should be added in the group", "group_members")
         self.users.append(self.user)
         
 

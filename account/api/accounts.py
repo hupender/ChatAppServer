@@ -4,7 +4,7 @@ from .schema import ChangePasswordSchema, DeleteUserSchema, GetUserDetailsSchema
 from common.success.messages import DELETE_ACCOUNT, GET_USER_DETAILS, PASSWORD_CHANGED_SUCCESS, USER_UPDATED_SUCCESSFULLY
 from django.http import JsonResponse
 from common.api_exception import BadRequestData, NotFound
-from common.error.exceptions import CAN_NOT_UPDATE_OTHER_USER, INVALID_PASSWORD, USER_NOT_FOUND
+from common.error.exceptions import CAN_NOT_UPDATE_OTHER_USER, INVALID_OLD_PASSWORD, USER_NOT_FOUND
 from common.helpers import make_response
 from common.redis_proxy import data_cache
 from chat.models import UserFriends
@@ -27,7 +27,7 @@ class ChangePassword(BaseView):
         try:
             data = self.schema.loads(request.body)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
         
         user = self.schema.user
 
@@ -39,7 +39,7 @@ class ChangePassword(BaseView):
             user.save()
             return JsonResponse(make_response(request, "POST", response_text=self.message))
         else:
-            raise BadRequestData(errors=INVALID_PASSWORD)
+            raise BadRequestData(errors=INVALID_OLD_PASSWORD)
         
 class UpdateUser(BaseView):
     """
@@ -55,7 +55,7 @@ class UpdateUser(BaseView):
         try:
             data = self.schema.loads(request.body)
         except Exception as e:
-            raise BadRequestData(errors=str(e))
+            raise BadRequestData(errors=e.messages_dict)
         
         user = self.schema.user
         if hasattr(data, "password"):

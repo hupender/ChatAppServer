@@ -32,9 +32,6 @@ class PersonManager(BaseUserManager):
         """
         while True:
             res = generate_random_string(length=8)
-            if field == "username":
-                if not Users.objects.filter(username=res).exists():
-                    return res
             if field == "account_number":
                 if not Users.objects.filter(account_number=res).exists():
                     return res
@@ -43,26 +40,23 @@ class PersonManager(BaseUserManager):
     def create_user(self, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
-        username = self._get_unique_random_id("username")
         extra_fields["account_number"] = self._get_unique_random_id("account_number")
-        return self._create_user(username, password, **extra_fields)
+        return self._create_user(extra_fields.pop("username"), password, **extra_fields)
     
     
     def create_staff(self, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", False)
-        username = self._get_unique_random_id("username")
         extra_fields["account_number"] = self._get_unique_random_id("account_number")
-        return self._create_user(username, password, **extra_fields)
+        return self._create_user(extra_fields.pop("username"), password, **extra_fields)
 
     
     def create_superuser(self, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_root", True)
-        username = self._get_unique_random_id("username")
         extra_fields["account_number"] = self._get_unique_random_id("account_number")
-        return self._create_user(username, password, **extra_fields)
+        return self._create_user(extra_fields.pop("username"), password, **extra_fields)
 
 
 
