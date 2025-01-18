@@ -1,0 +1,13 @@
+{% load i18n %}
+
+{% blocktrans %}Hello, {{first_name}} !{% endblocktrans %}
+
+{% blocktrans %}Welcome to our platform. We're excited to have you with us.{% endblocktrans %}
+
+{% blocktrans %}Your registration details are as follows:{% endblocktrans %}
+
+{% blocktrans %}- Email: {{email}}{% endblocktrans %}
+
+{% blocktrans %}- Signup Date: {{signup_date}}{% endblocktrans %}
+
+{% blocktrans %}If you have any questions, feel free to reach out to us.{% endblocktrans %}

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'account',
     'chat',
     'common',
+    'notification',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'chatApp.urls'
@@ -67,7 +70,7 @@ ROOT_URLCONF = 'chatApp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'notification/template')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -189,13 +192,17 @@ LANGUAGES = (
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = ""
 
-CLOUDINARY = {
-    'cloud_name': 'dsao9pwrq',
-    'api_key': '527331734284885',
-    'api_secret': 'uyeyRwQwzROgtHrkC6OMM1SK7Ec',
-}
+CLOUDINARY = {}
+GOOGLE_CLIENT_ID = ""
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+WHITELISTED_NOTIFICATION_GROUP = []
+SEND_EMAIL_NOTIFICATION = ""
+SEND_SMS_NOTIFICATION = ""
+SEND_PUSH_NOTIFICATION = ""
+
+LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale'), ]
 
 from .local_settings import *

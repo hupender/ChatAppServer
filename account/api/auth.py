@@ -5,6 +5,7 @@ from marshmallow import ValidationError
 import jwt
 from django.conf import settings
 from django.utils import timezone
+from account.tasks import send_signup_notification
 from common.decorators import validate_json_request, json_token_required
 from account.api.schema import PasswordChangeOtpSchema, UserSchema, LoginSchema, OtpSchema, ValidateOtpSchema
 from common.api_exception import api_exception_handler, BadRequestData
@@ -46,6 +47,7 @@ def create_user(request):
         raise BadRequestData(errors=e.messages_dict)
     
     user = user_model.objects.create_user(password=data.pop("password"), **data)
+    send_signup_notification.delay(user.id)
 
     response={}
     response["username"] = user.username

@@ -31,6 +31,7 @@ class UserSchema(ModelSchema):
     email = fields.Email(required=True)
     mobile_number = fields.String(required=False)
     password = fields.String(required=True, validate=validate.Length(min=6), load_only=True)
+    language = fields.Str(required=False)
 
     @validates("username")
     def check_username_exists(self, value):
@@ -145,6 +146,7 @@ class GetUserDetailsSchema(ModelSchema):
     email = fields.Email(dump_only=True)
     mobile_number = fields.String(dump_only=True)
     username = fields.Str(dump_only=True)
+    language = fields.Str(required=False)
 
 class DeleteUserSchema(ModelSchema):
     model = user_model

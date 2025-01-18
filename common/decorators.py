@@ -7,6 +7,7 @@ from django.conf import settings
 import jwt
 from django.contrib.auth import get_user_model
 from common.redis_proxy import data_cache
+from django.utils.translation import activate, deactivate
 
 def validate_json_request(f):
     """
@@ -74,4 +75,18 @@ def json_token_required(f):
         
         return f(request, *args, **kwargs)
 
+    return func
+
+def translate_activator(f):
+    """
+    activates the language set in account
+    """
+
+    @wraps(f)
+    def func(self):
+        language = self.context.get("language", settings.LANGUAGE_CODE)
+        activate(language)
+        f(self)
+        deactivate()
+    
     return func

@@ -1,0 +1,330 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-18 12:19+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: account/models.py:67
+msgid "username"
+msgstr ""
+
+#: account/models.py:71
+msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+msgstr ""
+
+#: account/models.py:75
+msgid "A user with that username already exists."
+msgstr ""
+
+#: account/models.py:78
+msgid "first name"
+msgstr ""
+
+#: account/models.py:79
+msgid "last name"
+msgstr ""
+
+#: account/models.py:80
+msgid "email address"
+msgstr ""
+
+#: account/models.py:81
+msgid "mobile number"
+msgstr ""
+
+#: account/models.py:83
+msgid "staff status"
+msgstr ""
+
+#: account/models.py:85
+msgid "Designates whether the user can log into this admin site."
+msgstr ""
+
+#: account/models.py:88
+msgid "active"
+msgstr ""
+
+#: account/models.py:91
+msgid ""
+"Designates whether this user should be treated as active. Unselect this "
+"instead of deleting accounts."
+msgstr ""
+
+#: account/models.py:96
+msgid "Flag Root"
+msgstr ""
+
+#: account/models.py:96
+msgid "Designates whether this user is root or not."
+msgstr ""
+
+#: account/models.py:98
+msgid "email verified"
+msgstr ""
+
+#: account/models.py:98
+msgid "Designates wheather email is verified or not"
+msgstr ""
+
+#: account/models.py:99
+msgid "mobile verified"
+msgstr ""
+
+#: account/models.py:99
+msgid "Designates wheather mobile is verified or not"
+msgstr ""
+
+#: account/models.py:100
+msgid "language"
+msgstr ""
+
+#: account/models.py:101
+msgid "account number"
+msgstr ""
+
+#: chat/models.py:8
+msgid "name of chat room"
+msgstr ""
+
+#: chat/models.py:10
+msgid "wheather the room is a grouop or not"
+msgstr ""
+
+#: chat/models.py:13
+msgid "name of the room associated"
+msgstr ""
+
+#: chat/models.py:15
+msgid "content of the message "
+msgstr ""
+
+#: chat/models.py:16
+msgid "wheather message is a file"
+msgstr ""
+
+#: chat/models.py:22
+msgid "mark message as read by user"
+msgstr ""
+
+#: chat/models.py:31
+msgid "Status of request"
+msgstr ""
+
+#: common/error/exceptions.py:3
+msgid "Invalid json request data."
+msgstr ""
+
+#: common/error/exceptions.py:4
+msgid "Server not responding."
+msgstr ""
+
+#: common/error/exceptions.py:5
+msgid "Invalid input data."
+msgstr ""
+
+#: common/error/exceptions.py:6
+msgid "Input data can't be parsed."
+msgstr ""
+
+#: common/error/exceptions.py:7
+msgid "Authentication failed."
+msgstr ""
+
+#: common/error/exceptions.py:8
+msgid "You don't have permission for this resource."
+msgstr ""
+
+#: common/error/exceptions.py:9
+msgid "Too many requests."
+msgstr ""
+
+#: common/error/exceptions.py:10
+msgid "Resource already exists."
+msgstr ""
+
+#: common/error/exceptions.py:11
+msgid "Recource not found."
+msgstr ""
+
+#: common/error/exceptions.py:12
+#, python-brace-format
+msgid "Method {method} not allowed."
+msgstr ""
+
+#: common/error/exceptions.py:13
+msgid "Either username or password is incorrect."
+msgstr ""
+
+#: common/error/exceptions.py:14
+msgid "Account does not exists for this username."
+msgstr ""
+
+#: common/error/exceptions.py:15
+msgid "Your email is not verified."
+msgstr ""
+
+#: common/error/exceptions.py:16
+msgid "Your mobile number is not verified."
+msgstr ""
+
+#: common/error/exceptions.py:17
+msgid "Email and mobile number not veirfied for this account."
+msgstr ""
+
+#: common/error/exceptions.py:18
+msgid "Token is not provided."
+msgstr ""
+
+#: common/error/exceptions.py:19
+msgid "Token has expired or is invalid."
+msgstr ""
+
+#: common/error/exceptions.py:20
+msgid "User not exists in the system."
+msgstr ""
+
+#: common/error/exceptions.py:21
+msgid "User has been blocked."
+msgstr ""
+
+#: common/error/exceptions.py:22
+msgid "Password is incorrect."
+msgstr ""
+
+#: common/error/exceptions.py:23
+msgid "Email and mobile does not exist for this account."
+msgstr ""
+
+#: common/error/exceptions.py:24
+msgid "User don't have the permission to operate on this resource."
+msgstr ""
+
+#: common/error/schema.py:3
+msgid "Username is not valid."
+msgstr ""
+
+#: common/error/schema.py:4
+msgid "First name is not valid."
+msgstr ""
+
+#: common/error/schema.py:5
+msgid "Last name is not valid."
+msgstr ""
+
+#: common/error/schema.py:6
+msgid "Mobile Number is invalid."
+msgstr ""
+
+#: common/error/schema.py:7
+msgid "Mobile number contains alphanumerics."
+msgstr ""
+
+#: common/error/schema.py:8
+msgid "Incorrect length of mobile number."
+msgstr ""
+
+#: common/error/schema.py:9
+msgid "Language does not exist in the system."
+msgstr ""
+
+#: common/error/schema.py:10
+msgid "Email already exists."
+msgstr ""
+
+#: common/error/schema.py:11
+msgid "Mobile number already exists."
+msgstr ""
+
+#: common/error/schema.py:12
+msgid "Enter a valid email id"
+msgstr ""
+
+#: common/error/schema.py:13
+msgid "Password should have a min lenght of 6."
+msgstr ""
+
+#: common/error/schema.py:14
+msgid "Otp in invalid."
+msgstr ""
+
+#: common/error/schema.py:15
+msgid "Token has expired/invalid."
+msgstr ""
+
+#: common/error/schema.py:16
+msgid "Name is a required field."
+msgstr ""
+
+#: common/success/messages.py:3
+msgid "Account has been created successfully."
+msgstr ""
+
+#: common/success/messages.py:4
+msgid "You have been logged in successfully."
+msgstr "आप सफलतापूर्वक लॉग इन हो गए हैं।"
+
+#: common/success/messages.py:5
+msgid "Refresh token has been generated successfully."
+msgstr ""
+
+#: common/success/messages.py:6
+msgid "Password has been changed successfully."
+msgstr ""
+
+#: common/success/messages.py:7
+msgid "Otp has been sent successfully."
+msgstr ""
+
+#: common/success/messages.py:8
+msgid "Otp has been validated successfully."
+msgstr ""
+
+#: common/success/messages.py:9
+msgid "User has been updates successfully."
+msgstr ""
+
+#: common/success/messages.py:10
+msgid "You have been logged out successfully."
+msgstr ""
+
+#: common/success/messages.py:11
+msgid "User details fetched successfully."
+msgstr ""
+
+#: common/success/messages.py:12
+msgid "Account deleted successfully."
+msgstr ""
+
+msgid "Successfully Registered"
+msgstr "सफलतापूर्वक पंजीकृत"
+
+msgid "Hello, %(first_name)s !"
+msgstr "नमस्ते, %(first_name)s !"
+
+msgid "Welcome to our platform. We're excited to have you with us."
+msgstr "हमारे प्लेटफ़ॉर्म में आपका स्वागत है। हम आपको हमारे साथ पाकर उत्साहित हैं।"
+
+msgid "Your registration details are as follows:"
+msgstr "आपकी पंजीकरण विवरण इस प्रकार हैं:"
+
+msgid "- Email: %(email)s"
+msgstr "- ईमेल: %(email)s"
+
+msgid "- Signup Date: %(signup_date)s"
+msgstr "- साइनअप तिथि: %(signup_date)s"
+
+msgid "If you have any questions, feel free to reach out to us."
+msgstr "यदि आपके पास कोई प्रश्न हो, तो कृपया हमसे संपर्क करने में संकोच न करें।"

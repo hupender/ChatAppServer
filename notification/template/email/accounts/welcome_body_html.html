@@ -1,0 +1,13 @@
+{% load i18n %}
+<html>
+	<body>
+		<h1>{% blocktrans %}Hello, {{first_name}} !{% endblocktrans %}</h1>
+		<p>{% blocktrans %}Welcome to our platform. We're excited to have you with us.{% endblocktrans %}</p>
+		<p>{% blocktrans %}Your registration details are as follows:{% endblocktrans %}</p>
+		<ul>
+			<li>{% blocktrans %}- Email: {{email}}{% endblocktrans %}</li>
+			<li>{% blocktrans %}- Signup Date: {{signup_date}}{% endblocktrans %}</li>
+		</ul>
+		<p>{% blocktrans %}If you have any questions, feel free to reach out to us.{% endblocktrans %}</p>
+	</body>
+</html>
