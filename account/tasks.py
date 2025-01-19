@@ -13,11 +13,13 @@ def send_signup_notification(user_id):
         "first_name": user.first_name,
         "email": user.email,
         "signup_date": datetime.now(),
-        "receivers": [user.email],
+        "mobile_number": user.mobile_number,
         "app": "accounts",
         "file_code": "welcome",
-        "notify": ["email", ],
-        "language": user.language
+        "notify": ["email", "sms"],
+        "language": user.language,
+        "receiver_email": [user.email, ],
+        "receiver_mobile_number": [user.mobile_number, ],
     }
     
     notify_user.delay(context)

@@ -13,7 +13,8 @@ logger = get_task_logger(__name__)
 @celery_app.task
 def notify_user(context={}):
     if settings.WHITELISTED_NOTIFICATION_GROUP:
-        context["receivers"] = settings.WHITELISTED_NOTIFICATION_GROUP
+        context["receiver_email"] = [d["email"] for d in settings.WHITELISTED_NOTIFICATION_GROUP]
+        context["receiver_mobile_number"] = [d["mobile_number"] for d in settings.WHITELISTED_NOTIFICATION_GROUP]
     else:
         pass
     
