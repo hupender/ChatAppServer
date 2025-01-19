@@ -197,6 +197,7 @@ DEFAULT_FILE_STORAGE = ""
 CLOUDINARY = {}
 GOOGLE_CLIENT_ID = ""
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+SMS_BACKEND = 'sms.backends.console.SmsBackend'
 
 WHITELISTED_NOTIFICATION_GROUP = []
 SEND_EMAIL_NOTIFICATION = ""
@@ -204,5 +205,7 @@ SEND_SMS_NOTIFICATION = ""
 SEND_PUSH_NOTIFICATION = ""
 
 LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale'), ]
+
+EMAIL_HOST_USER = "no-reply@domain.com"
 
 from .local_settings import *

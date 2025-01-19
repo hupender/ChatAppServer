@@ -30,7 +30,7 @@ class Notify:
         email = EmailMultiAlternatives(
             self.context["subject"],
             self.context["body"],
-            settings.SENDER_EMAIL,
+            settings.EMAIL_HOST_USER,
             self.receivers
         )
         email.attach_alternative(self.context["html_body"], "text/html")
