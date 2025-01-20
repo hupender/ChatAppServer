@@ -208,4 +208,6 @@ LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale'), ]
 
 EMAIL_HOST_USER = "no-reply@domain.com"
 
+FCM_SERVICE_FILE = "path/to/google/api/key/file.json"
+
 from .local_settings import *

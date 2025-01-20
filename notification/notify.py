@@ -4,7 +4,12 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from sms import Message
 from celery.utils.log import get_task_logger
+import firebase_admin
+from firebase_admin import credentials, messaging
 
+
+cred = credentials.Certificate(settings.FCM_SERVICE_FILE)
+firebase_admin.initialize_app(cred)
 logger = get_task_logger(__name__)
 
 class Notify:
@@ -38,6 +43,17 @@ class Notify:
             self.context["body"] = render_to_string(template["body"] % (self.app, self.file_code), self.context)
             self.send_sms()
 
+        if ("mob" in self.context["notify"]
+            and settings.SEND_PUSH_NOTIFICATION
+        ):
+            template = {
+                "body": "mob/%s/%s_body.txt",
+                "title": "mob/%s/%s_title.txt"
+            }
+            self.context["body"] = render_to_string(template["body"] % (self.app, self.file_code), self.context)
+            self.context["title"] = render_to_string(template["title"] % (self.app, self.file_code), self.context)
+            self.send_push_notification()
+
     def send_email(self):
         email = EmailMultiAlternatives(
             self.context["subject"],
@@ -55,3 +71,20 @@ class Notify:
             self.context["receiver_mobile_number"]
         )
         message.send()
+
+    def send_push_notification(self):
+
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=self.context["title"],
+                body=self.context["body"]
+                # image=""
+            ),
+            token="eJ1ScgUxeMr9IrQvBN3XEI:APA91bGsRw_le46aXT0b9xZsZh_u2NP4GPENhRmdhj3G1BpTOlBJ-gFYEMwp6RRE0H6ra3pigZIdBwA1JC4hpLZrGnpxEf-Us4mt8nj62aecstFb5xMlPcw"
+        )
+        
+        try:
+            res = messaging.send(message)
+            print(res)
+        except Exception as e:
+            print(e)

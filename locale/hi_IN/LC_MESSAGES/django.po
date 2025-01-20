@@ -331,3 +331,9 @@ msgstr "यदि आपके पास कोई प्रश्न हो, �
 
 msgid "- Mobile Number: %(mobile_number)s"
 msgstr "- मोबाइल नंबर: %(mobile_number)s"
+
+msgid "Click to explore"
+msgstr "अन्वेषण के लिए क्लिक करें"
+
+msgid "Your account have been created successfully"
+msgstr "आपका खाता सफलतापूर्वक बन गया है"
